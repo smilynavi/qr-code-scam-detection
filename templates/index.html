@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>URL ANALYZER / UPI QR Analyzer</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #080909;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+        }
+
+
+        /* =========================
+           NAVBAR
+        ========================== */
+
+        nav {
+            height: 75px;
+            padding: 0 7%;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            border-bottom: 1px solid #202320;
+            background: #080909;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .logo span {
+            color: #b8ff20;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 35px;
+        }
+
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #b8ff20;
+        }
+
+        .home-link {
+            color: #b8ff20 !important;
+        }
+
+
+        /* =========================
+           HERO
+        ========================== */
+
+        .hero {
+            max-width: 1200px;
+            margin: auto;
+
+            min-height: 570px;
+
+            padding: 90px 30px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 70px;
+        }
+
+        .hero-left {
+            max-width: 650px;
+        }
+
+        .tag {
+            display: inline-block;
+
+            padding: 8px 14px;
+
+            border: 1px solid #30352b;
+
+            border-radius: 30px;
+
+            color: #b8ff20;
+
+            font-family: monospace;
+
+            font-size: 11px;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 25px;
+        }
+
+        .hero h1 {
+            font-size: 64px;
+
+            line-height: 1.02;
+
+            letter-spacing: -4px;
+
+            margin-bottom: 25px;
+        }
+
+        .hero h1 span {
+            color: #b8ff20;
+        }
+
+        .hero p {
+            color: #858585;
+
+            font-size: 16px;
+
+            line-height: 1.8;
+
+            max-width: 560px;
+
+            margin-bottom: 35px;
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================== */
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 14px 24px;
+
+            border-radius: 9px;
+
+            text-decoration: none;
+
+            font-size: 13px;
+
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .primary {
+            background: #b8ff20;
+            color: #080909;
+        }
+
+        .secondary {
+            border: 1px solid #303330;
+
+            color: #ffffff;
+
+            background: #111211;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+
+        /* =========================
+           RIGHT VISUAL REMOVED
+        ========================== */
+
+
+        /* =========================
+           FEATURE CARDS
+        ========================== */
+
+        .features {
+            max-width: 1200px;
+
+            margin: 0 auto;
+
+            padding: 0 30px 80px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: #101110;
+
+            border: 1px solid #242724;
+
+            border-radius: 16px;
+
+            padding: 30px;
+
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: #56663e;
+
+            transform: translateY(-4px);
+        }
+
+        .feature-top {
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            margin-bottom: 25px;
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 10px;
+
+            background: #181b17;
+
+            color: #b8ff20;
+
+            font-size: 20px;
+        }
+
+        .number {
+            color: #444;
+
+            font-family: monospace;
+
+            font-size: 12px;
+        }
+
+        .feature-card h2 {
+            font-size: 21px;
+
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: #777;
+
+            font-size: 13px;
+
+            line-height: 1.7;
+        }
+
+        .feature-link {
+            display: inline-block;
+
+            margin-top: 22px;
+
+            color: #b8ff20;
+
+            text-decoration: none;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }
+
+
+        /* =========================
+           HOW IT WORKS
+        ========================== */
+
+        .how {
+            max-width: 1200px;
+
+            margin: auto;
+
+            padding: 70px 30px 100px;
+        }
+
+        .section-label {
+            color: #b8ff20;
+
+            font-family: monospace;
+
+            font-size: 11px;
+
+            letter-spacing: 2px;
+
+            margin-bottom: 15px;
+        }
+
+        .how h2 {
+            font-size: 38px;
+
+            letter-spacing: -1px;
+
+            margin-bottom: 45px;
+        }
+
+        .steps {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 20px;
+        }
+
+        .step {
+            border-top: 1px solid #292c29;
+
+            padding-top: 20px;
+        }
+
+        .step-number {
+            color: #b8ff20;
+
+            font-family: monospace;
+
+            margin-bottom: 20px;
+        }
+
+        .step h3 {
+            font-size: 17px;
+
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            color: #777;
+
+            font-size: 13px;
+
+            line-height: 1.7;
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================== */
+
+        footer {
+            border-top: 1px solid #202320;
+
+            padding: 25px 7%;
+
+            color: #555;
+
+            font-size: 11px;
+
+            display: flex;
+
+            justify-content: space-between;
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width: 850px) {
+
+            .nav-links {
+                gap: 12px;
+            }
+
+            .nav-links a {
+                font-size: 11px;
+            }
+
+            .hero {
+                flex-direction: column;
+
+                text-align: center;
+
+                padding-top: 60px;
+            }
+
+            .hero p {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .buttons {
+                justify-content: center;
+            }
+
+            .features,
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================== -->
+
+<nav>
+
+    <div class="logo">
+        URL ANALYZER <span>/</span> UPI QR Analyzer
+    </div>
+
+
+    <div class="nav-links">
+
+        <a
+            href="/"
+            class="home-link"
+        >
+            HOME
+        </a>
+
+        <a href="/qr-scanner">
+            URL ANALYZER
+        </a>
+
+        <a href="/upi-payment">
+            UPI QR FOR PAYMENT
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================
+     HERO
+========================== -->
+
+<section class="hero">
+
+
+    <div class="hero-left">
+
+        <div class="tag">
+            QR SECURITY ANALYSIS
+        </div>
+
+
+        <h1>
+            Scan smart.<br>
+            <span>Stay safe.</span>
+        </h1>
+
+
+        <p>
+            Analyze URL/QR before opening websites
+            or making digital payments. Detect suspicious
+            links and verify UPI payment information
+            through one secure platform.
+        </p>
+
+
+        <div class="buttons">
+
+            <a
+                href="/qr-scanner"
+                class="btn primary"
+            >
+                URl ANALYZER →
+            </a>
+
+
+            <a
+                href="/upi-payment"
+                class="btn secondary"
+            >
+                Verify UPI QR
+            </a>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =========================
+     FEATURES
+========================== -->
+
+<section class="features">
+
+
+    <!-- WEBSITE -->
+
+    <div class="feature-card">
+
+        <div class="feature-top">
+
+            <div class="feature-icon">
+                ↗
+            </div>
+
+            <div class="number">
+                01
+            </div>
+
+        </div>
+
+
+        <h2>
+            URL ANALYZER
+        </h2>
+
+
+        <p>
+            Enter a website URL and analyze its security
+            to detect potentially malicious or suspicious
+            activity before opening it.
+        </p>    
+
+
+        <a
+            href="/qr-scanner"
+            class="feature-link"
+        >
+            OPEN URL ANALYZER →
+        </a>
+
+    </div>
+
+
+
+    <!-- PAYMENT -->
+
+    <div class="feature-card">
+
+        <div class="feature-top">
+
+            <div class="feature-icon">
+                ₹
+            </div>
+
+            <div class="number">
+                02
+            </div>
+
+        </div>
+
+
+        <h2>
+            UPI QR for Payment
+        </h2>
+
+
+        <p>
+            Analyze UPI QR codes, identify the
+            payment details and verify the payment
+            information before proceeding.
+        </p>
+
+
+        <a
+            href="/upi-payment"
+            class="feature-link"
+        >
+            VERIFY PAYMENT →
+        </a>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =========================
+     HOW IT WORKS
+========================== -->
+
+<section class="how">
+
+
+    <div class="section-label">
+        HOW IT WORKS
+    </div>
+
+
+    <h2>
+        One scan. Three steps.
+    </h2>
+
+
+    <div class="steps">
+
+
+        <div class="step">
+
+            <div class="step-number">
+                01 / SCAN
+            </div>
+
+            <h3>
+                Upload or scan
+            </h3>
+
+            <p>
+                Provide a QR code image or use
+                your device camera to scan it.
+            </p>
+
+        </div>
+
+
+
+        <div class="step">
+
+            <div class="step-number">
+                02 / ANALYZE
+            </div>
+
+            <h3>
+                Understand the destination
+            </h3>
+
+            <p>
+                Our system extracts the QR data
+                and checks the destination or payment
+                information.
+            </p>
+
+        </div>
+
+
+
+        <div class="step">
+
+            <div class="step-number">
+                03 / DECIDE
+            </div>
+
+            <h3>
+                Take action safely
+            </h3>
+
+            <p>
+                View the security result before
+                opening a website or proceeding
+                with a payment.
+            </p>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     FOOTER
+========================== -->
+
+<footer>
+
+    <span>
+        URL ANALYZER / UPI QR ANALYZER
+    </span>
+
+    <span>
+        SECURITY FIRST
+    </span>
+
+</footer>
+
+
+</body>
+
+</html>
+

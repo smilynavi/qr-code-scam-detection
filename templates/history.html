@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>QR Code Scam Detection</title>
+
+</head>
+
+<body>
+
+    <h1>QR Code Scam Detection</h1>
+
+    <p>Upload your QR Code</p>
+
+    <form action="/scan" method="POST" enctype="multipart/form-data">
+
+        <input
+            type="file"
+            name="qr_image"
+            accept="image/*"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Scan QR Code
+        </button>
+
+    </form>
+
+
+    {% if url %}
+
+        <h2>QR Code Detected!</h2>
+
+        <p>Extracted URL:</p>
+
+        <p>
+            {{ url }}
+        </p>
+
+    {% endif %}
+
+
+    {% if error %}
+
+        <p>
+            {{ error }}
+        </p>
+
+    {% endif %}
+
+</body>
+
+</html>

@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>UPI QR Analyzer</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #080909;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+
+        nav {
+            height: 75px;
+            padding: 0 7%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #202320;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #b8ff20;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: #777;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .nav-links a:hover,
+        .active {
+            color: #b8ff20 !important;
+        }
+
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .container {
+            max-width: 1050px;
+            margin: auto;
+            padding: 70px 25px 100px;
+        }
+
+        .label {
+            color: #b8ff20;
+            font-family: monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 50px;
+            letter-spacing: -2px;
+            margin-bottom: 15px;
+        }
+
+        .intro {
+            color: #777;
+            max-width: 650px;
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 45px;
+        }
+
+
+        /* =========================
+           SCANNER CARD
+        ========================= */
+
+        .scanner-card {
+            background: #101110;
+            border: 1px solid #292c29;
+            border-radius: 18px;
+            padding: 35px;
+        }
+
+        .card-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .card-heading h2 {
+            font-size: 15px;
+            letter-spacing: 2px;
+        }
+
+        .status {
+            color: #b8ff20;
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+
+        /* =========================
+           SCANNER AREA
+        ========================= */
+
+        .scanner-area {
+            border: 1px dashed #444;
+            background: #090a09;
+            border-radius: 14px;
+            padding: 35px;
+            text-align: center;
+        }
+
+        .scanner-area h2 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .scanner-area p {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 25px;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #camera-status {
+            color: #777;
+            font-family: monospace;
+            font-size: 11px;
+            margin: 10px 0 15px;
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button,
+        .choose-btn {
+            border: none;
+            background: #b8ff20;
+            color: #080909;
+            padding: 14px 22px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover,
+        .choose-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .camera-btn {
+            background: transparent;
+            color: #b8ff20;
+            border: 1px solid #b8ff20;
+        }
+
+        .stop-btn {
+            display: none;
+            background: #ff5555;
+            color: white;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #file-name {
+            margin-top: 15px;
+            color: #555;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        #analyze-btn {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #b8ff20;
+            color: #080909;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+
+        /* =========================
+           RESULT
+        ========================= */
+
+        .result {
+            margin-top: 25px;
+            background: #0d0f0d;
+            border: 1px solid #292c29;
+            border-radius: 16px;
+            padding: 28px;
+        }
+
+        .result-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .result-label {
+            color: #b8ff20;
+            font-family: monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+
+
+        /* =========================
+           STATUS BADGE
+        ========================= */
+
+        .verified-badge {
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .badge-safe {
+            color: #b8ff20;
+            background: rgba(184, 255, 32, 0.08);
+            border: 1px solid rgba(184, 255, 32, 0.3);
+        }
+
+        .badge-risk {
+            color: #ff5555;
+            background: rgba(255, 85, 85, 0.08);
+            border: 1px solid rgba(255, 85, 85, 0.3);
+        }
+
+        .badge-suspicious {
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.08);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+        }
+
+
+        /* =========================
+           PAYMENT DETAILS
+        ========================= */
+
+        .payment-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .detail-card {
+            background: #101210;
+            border: 1px solid #242724;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .detail-icon {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #181b18;
+            border-radius: 9px;
+            color: #b8ff20;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .result-title {
+            color: #666;
+            font-size: 9px;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .result-value {
+            color: #ddd;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+
+        /* =========================
+           SECURITY STATUS
+        ========================= */
+
+        .security-box {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid;
+        }
+
+        .security-safe {
+            background: rgba(184, 255, 32, 0.04);
+            border-color: rgba(184, 255, 32, 0.2);
+        }
+
+        .security-risk {
+            background: rgba(255, 85, 85, 0.04);
+            border-color: rgba(255, 85, 85, 0.2);
+        }
+
+        .security-suspicious {
+            background: rgba(255, 170, 0, 0.04);
+            border-color: rgba(255, 170, 0, 0.2);
+        }
+
+        .security-title {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .security-safe .security-title {
+            color: #b8ff20;
+        }
+
+        .security-risk .security-title {
+            color: #ff5555;
+        }
+
+        .security-suspicious .security-title {
+            color: #ffaa00;
+        }
+
+        .result-message {
+            margin-top: 8px;
+            color: #777;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+
+        /* =========================
+           ML ANALYSIS
+        ========================= */
+
+        .ml-section {
+            margin-top: 18px;
+            padding: 20px;
+            background: #101210;
+            border: 1px solid #242724;
+            border-radius: 12px;
+        }
+
+        .ml-title {
+            color: #b8ff20;
+            font-family: monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            margin-bottom: 18px;
+        }
+
+        .ml-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .ml-card {
+            background: #0b0d0b;
+            border: 1px solid #222522;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .ml-card-title {
+            color: #666;
+            font-size: 9px;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .ml-card-value {
+            color: #ddd;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .ml-probability {
+            margin-top: 15px;
+        }
+
+        .ml-probability-header {
+            display: flex;
+            justify-content: space-between;
+            color: #777;
+            font-family: monospace;
+            font-size: 10px;
+            margin-bottom: 9px;
+        }
+
+        .ml-probability-header strong {
+            color: #b8ff20;
+        }
+
+        .ml-bar {
+            height: 7px;
+            background: #252825;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .ml-fill {
+            height: 100%;
+            width: 0%;
+            background: #b8ff20;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .ml-explanation {
+            margin-top: 15px;
+            color: #777;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+
+        /* =========================
+           RISK SCORE
+        ========================= */
+
+        .risk-section {
+            margin-top: 20px;
+            padding: 18px;
+            background: #101210;
+            border: 1px solid #242724;
+            border-radius: 12px;
+        }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            color: #777;
+            font-family: monospace;
+            font-size: 10px;
+            margin-bottom: 10px;
+        }
+
+        .risk-header strong {
+            color: #ddd;
+            font-size: 14px;
+        }
+
+        .risk-bar {
+            height: 6px;
+            background: #252825;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .risk-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+        }
+
+        .fill-safe {
+            background: #b8ff20;
+        }
+
+        .fill-risk {
+            background: #ff5555;
+        }
+
+        .fill-suspicious {
+            background: #ffaa00;
+        }
+
+        .risk-info {
+            margin-top: 8px;
+            color: #555;
+            font-size: 10px;
+        }
+
+
+        /* =========================
+           DETECTED REASONS
+        ========================= */
+
+        .reasons-box {
+            margin-top: 18px;
+            padding: 18px;
+            background: #101210;
+            border: 1px solid #242724;
+            border-radius: 12px;
+        }
+
+        .reasons-title {
+            color: #777;
+            font-family: monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .reason-item {
+            color: #999;
+            font-size: 11px;
+            line-height: 1.7;
+            padding: 3px 0;
+        }
+
+        .reason-item span {
+            color: #ffaa00;
+            margin-right: 5px;
+        }
+
+
+        /* =========================
+           PAYMENT BUTTON
+        ========================= */
+
+        .payment-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 22px;
+            padding: 15px 20px;
+            background: #b8ff20;
+            color: #080909;
+            text-decoration: none;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .payment-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .payment-btn span {
+            font-size: 17px;
+        }
+
+        .payment-warning {
+            text-align: center;
+            margin-top: 10px;
+            color: #555;
+            font-size: 10px;
+        }
+
+
+        /* =========================
+           ERROR
+        ========================= */
+
+        .error {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #211010;
+            border: 1px solid #4b2727;
+            color: #ff7777;
+            font-size: 12px;
+        }
+
+
+        /* =========================
+           FEATURES
+        ========================= */
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            background: #0b0c0b;
+            border: 1px solid #242724;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .feature-number {
+            color: #b8ff20;
+            font-family: monospace;
+            font-size: 10px;
+            margin-bottom: 15px;
+        }
+
+        .feature h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: #666;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+            border-top: 1px solid #202320;
+            padding: 25px 7%;
+            color: #444;
+            font-size: 10px;
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            nav {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                gap: 12px;
+            }
+
+            .nav-links a {
+                font-size: 10px;
+            }
+
+            h1 {
+                font-size: 38px;
+            }
+
+            .scanner-card {
+                padding: 20px;
+            }
+
+            .payment-details {
+                grid-template-columns: 1fr;
+            }
+
+            .ml-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .result {
+                padding: 20px;
+            }
+
+            .result-top {
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+        }
+
+    </style>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav>
+
+    <div class="logo">
+        URL ANALYZER <span>/</span> UPI QR Analyzer
+    </div>
+
+    <div class="nav-links">
+
+        <a href="/">
+            HOME
+        </a>
+
+        <a href="/qr-scanner">
+            URL ANALYZER
+        </a>
+
+        <a href="/upi-payment" class="active">
+            UPI QR FOR PAYMENT
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<div class="container">
+
+    <div class="label">
+        PAYMENT SECURITY
+    </div>
+
+    <h1>
+        UPI QR Analyzer
+    </h1>
+
+    <p class="intro">
+        Scan a UPI QR code using your camera or upload
+        an image to verify the payment details before paying.
+    </p>
+
+
+    <!-- =========================
+         SCANNER CARD
+    ========================= -->
+
+    <div class="scanner-card">
+
+
+        <div class="card-heading">
+
+            <h2>
+                ANALYZE UPI QR
+            </h2>
+
+            <span class="status">
+                ● SYSTEM READY
+            </span>
+
+        </div>
+
+
+        <!-- CAMERA -->
+
+        <div class="scanner-area">
+
+            <div id="reader"></div>
+
+            <div id="camera-status">
+                Camera is ready
+            </div>
+
+            <h2>
+                Scan UPI QR Code
+            </h2>
+
+            <p>
+                Use your laptop/mobile camera or upload a QR image
+            </p>
+
+
+            <div class="buttons">
+
+                <button
+                    type="button"
+                    class="camera-btn"
+                    id="camera-btn"
+                    onclick="startCamera()">
+
+                    📷 SCAN WITH CAMERA
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="stop-btn"
+                    id="stop-btn"
+                    onclick="stopCamera()">
+
+                    ✕ STOP CAMERA
+
+                </button>
+
+
+                <label
+                    for="upi_image"
+                    class="choose-btn">
+
+                    🖼️ UPLOAD QR IMAGE
+
+                </label>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             UPLOAD
+        ========================= -->
+
+        <form
+            action="/upi-scan"
+            method="POST"
+            enctype="multipart/form-data">
+
+            <input
+                type="file"
+                id="upi_image"
+                name="upi_image"
+                accept="image/*"
+                required>
+
+            <div id="file-name">
+                No file selected
+            </div>
+
+            <button
+                type="submit"
+                id="analyze-btn">
+
+                ANALYZE UPI QR →
+
+            </button>
+
+        </form>
+
+
+        <!-- =========================
+             RESULT
+        ========================= -->
+
+        {% if upi %}
+
+        <div class="result">
+
+
+            <!-- RESULT HEADER -->
+
+            <div class="result-top">
+
+                <div class="result-label">
+                    UPI QR DATA DETECTED
+                </div>
+
+                <div class="verified-badge
+                    {% if upi.status == 'SAFE' %}
+                        badge-safe
+                    {% elif upi.status == 'RISK' %}
+                        badge-risk
+                    {% else %}
+                        badge-suspicious
+                    {% endif %}">
+
+                    ● {{ upi.status }}
+
+                </div>
+
+            </div>
+
+
+            <!-- PAYMENT DETAILS -->
+
+            <div class="payment-details">
+
+
+                <!-- MERCHANT -->
+
+                <div class="detail-card">
+
+                    <div class="detail-icon">
+                        🏪
+                    </div>
+
+                    <div>
+
+                        <div class="result-title">
+                            MERCHANT
+                        </div>
+
+                        <div class="result-value">
+                            {{ upi.merchant | default("Unknown") }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- UPI ID -->
+
+                <div class="detail-card">
+
+                    <div class="detail-icon">
+                        💳
+                    </div>
+
+                    <div>
+
+                        <div class="result-title">
+                            UPI ID
+                        </div>
+
+                        <div class="result-value">
+                            {{ upi.upi_id | default("Unknown") }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- AMOUNT -->
+
+                <div class="detail-card">
+
+                    <div class="detail-icon">
+                        ₹
+                    </div>
+
+                    <div>
+
+                        <div class="result-title">
+                            AMOUNT
+                        </div>
+
+                        <div class="result-value">
+                            {{ upi.amount | default("Not Specified") }}
+                            {{ upi.currency | default("INR") }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 SECURITY STATUS
+            ========================= -->
+
+            <div class="security-box
+                {% if upi.status == 'SAFE' %}
+                    security-safe
+                {% elif upi.status == 'RISK' %}
+                    security-risk
+                {% else %}
+                    security-suspicious
+                {% endif %}">
+
+
+                <div class="security-title">
+
+                    {% if upi.status == 'SAFE' %}
+
+                        ✓ PAYMENT LOOKS SAFE
+
+                    {% elif upi.status == 'RISK' %}
+
+                        ⚠ PAYMENT RISK DETECTED
+
+                    {% else %}
+
+                        ⚠ SUSPICIOUS PAYMENT
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="result-message">
+
+                    {{ upi.message | default("Payment QR analyzed successfully.") }}
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 ML ANALYSIS
+            ========================= -->
+
+            <div class="ml-section">
+
+                <div class="ml-title">
+                    🤖 MACHINE LEARNING ANALYSIS
+                </div>
+
+
+                <div class="ml-grid">
+
+
+                    <div class="ml-card">
+
+                        <div class="ml-card-title">
+                            ML PREDICTION
+                        </div>
+
+                        <div class="ml-card-value">
+
+                            {% if upi.ml_prediction is not none %}
+                                {% if upi.ml_prediction == 1 %}
+                                    RISK
+                                {% else %}
+                                    SAFE
+                                {% endif %}
+                            {% else %}
+                                NOT AVAILABLE
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ml-card">
+
+                        <div class="ml-card-title">
+                            MODEL STATUS
+                        </div>
+
+                        <div class="ml-card-value">
+
+                            {% if upi.ml_status %}
+                                {{ upi.ml_status }}
+                            {% else %}
+                                NOT AVAILABLE
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ML PROBABILITY -->
+
+                <div class="ml-probability">
+
+                    <div class="ml-probability-header">
+
+                        <span>
+                            SCAM PROBABILITY
+                        </span>
+
+                        <strong id="mlProbability">
+                            0%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ml-bar">
+
+                        <div
+                            class="ml-fill"
+                            id="mlFill">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="ml-explanation">
+
+                    {% if upi.ml_explanation %}
+
+                        {{ upi.ml_explanation }}
+
+                    {% else %}
+
+                        ML analysis will appear here when the
+                        UPI-specific machine learning model is enabled.
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 RISK SCORE
+            ========================= -->
+
+            <div class="risk-section">
+
+                <div class="risk-header">
+
+                    <span>
+                        RISK SCORE
+                    </span>
+
+                    <strong id="riskScoreValue">
+                        {{ upi.score | default(0) }}
+                    </strong>
+
+                </div>
+
+
+                <div class="risk-bar">
+
+                    <div
+                        id="riskFill"
+                        class="risk-fill
+                        {% if upi.status == 'SAFE' %}
+                            fill-safe
+                        {% elif upi.status == 'RISK' %}
+                            fill-risk
+                        {% else %}
+                            fill-suspicious
+                        {% endif %}">
+                    </div>
+
+                </div>
+
+
+                <div class="risk-info">
+                    Lower score indicates fewer suspicious indicators.
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 DETECTED REASONS
+            ========================= -->
+
+            {% if upi.reasons %}
+
+            <div class="reasons-box">
+
+                <div class="reasons-title">
+                    DETECTED REASONS
+                </div>
+
+
+                {% for reason in upi.reasons %}
+
+                <div class="reason-item">
+
+                    <span>
+                        •
+                    </span>
+
+                    {{ reason }}
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- =========================
+                 PAYMENT BUTTON
+            ========================= -->
+
+            {% if upi.payment_url %}
+
+            <a
+                href="{{ upi.payment_url }}"
+                class="payment-btn">
+
+                CONTINUE TO PAYMENT
+
+                <span>
+                    →
+                </span>
+
+            </a>
+
+
+            <div class="payment-warning">
+
+                Verify the merchant and UPI ID before confirming the payment.
+
+            </div>
+
+            {% endif %}
+
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- =========================
+             ERROR
+        ========================= -->
+
+        {% if error %}
+
+        <div class="error">
+
+            ❌ {{ error }}
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- =========================
+             FEATURES
+        ========================= -->
+
+        <div class="features">
+
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    01
+                </div>
+
+                <h3>
+                    Scan
+                </h3>
+
+                <p>
+                    Scan the UPI QR code directly
+                    using your device camera.
+                </p>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    02
+                </div>
+
+                <h3>
+                    Verify
+                </h3>
+
+                <p>
+                    Extract merchant, UPI ID
+                    and payment amount.
+                </p>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    03
+                </div>
+
+                <h3>
+                    Protect
+                </h3>
+
+                <p>
+                    Detect suspicious patterns
+                    before making a payment.
+                </p>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer>
+
+    URL ANALYZER / UPI QR ANALYZER
+
+</footer>
+
+
+<script>
+
+
+    /* =================================
+       FILE UPLOAD
+    ================================= */
+
+    const fileInput =
+        document.getElementById("upi_image");
+
+    const fileName =
+        document.getElementById("file-name");
+
+    const analyzeButton =
+        document.getElementById("analyze-btn");
+
+
+    if (fileInput) {
+
+        fileInput.addEventListener("change", function () {
+
+            if (this.files.length > 0) {
+
+                fileName.textContent =
+                    this.files[0].name;
+
+                analyzeButton.style.display =
+                    "block";
+
+            }
+
+            else {
+
+                fileName.textContent =
+                    "No file selected";
+
+                analyzeButton.style.display =
+                    "none";
+
+            }
+
+        });
+
+    }
+
+
+    /* =================================
+       RISK SCORE BAR
+       NO JINJA CALCULATION
+    ================================= */
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const scoreElement =
+            document.getElementById("riskScoreValue");
+
+        const riskFill =
+            document.getElementById("riskFill");
+
+        if (!scoreElement || !riskFill) {
+            return;
+        }
+
+        let score =
+            parseFloat(scoreElement.textContent.trim());
+
+        if (isNaN(score)) {
+            score = 0;
+        }
+
+        /*
+         * Current backend score is normally 0-10.
+         * Convert it to percentage.
+         */
+
+        let percentage =
+            score * 10;
+
+        if (percentage < 0) {
+            percentage = 0;
+        }
+
+        if (percentage > 100) {
+            percentage = 100;
+        }
+
+        riskFill.style.width =
+            percentage + "%";
+
+    });
+
+
+    /* =================================
+       ML PROBABILITY
+    ================================= */
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const probabilityElement =
+            document.getElementById("mlProbability");
+
+        const mlFill =
+            document.getElementById("mlFill");
+
+        if (!probabilityElement || !mlFill) {
+            return;
+        }
+
+
+        /*
+         * Flask should provide:
+         *
+         * upi.scam_probability
+         *
+         * It can be:
+         * 0.25
+         * 25
+         * "0.25"
+         * "25"
+         */
+
+        let probability =
+            "{{ (upi | default({})).get('scam_probability', 0) }}";
+
+
+        probability =
+            parseFloat(probability);
+
+
+        if (isNaN(probability)) {
+            probability = 0;
+        }
+
+
+        /*
+         * If model gives 0-1,
+         * convert to percentage.
+         */
+
+        if (probability <= 1) {
+
+            probability =
+                probability * 100;
+
+        }
+
+
+        if (probability < 0) {
+            probability = 0;
+        }
+
+        if (probability > 100) {
+            probability = 100;
+        }
+
+
+        probability =
+            Math.round(probability);
+
+
+        probabilityElement.textContent =
+            probability + "%";
+
+
+        mlFill.style.width =
+            probability + "%";
+
+    });
+
+
+    /* =================================
+       CAMERA QR SCANNER
+       DIRECT CAMERA + jsQR
+    ================================= */
+
+    let cameraStream = null;
+    let scanning = false;
+    let qrProcessing = false;
+    let scanTimer = null;
+
+
+    async function startCamera() {
+
+        if (scanning) {
+            return;
+        }
+
+        const reader =
+            document.getElementById("reader");
+
+        const status =
+            document.getElementById("camera-status");
+
+        const cameraButton =
+            document.getElementById("camera-btn");
+
+        const stopButton =
+            document.getElementById("stop-btn");
+
+        reader.style.display = "block";
+        status.textContent = "Starting camera...";
+
+        try {
+
+            if (!navigator.mediaDevices ||
+                !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Camera API is not supported by this browser.");
+            }
+
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            });
+
+            console.log("CAMERA STREAM STARTED");
+
+            reader.innerHTML = "";
+
+            const video = document.createElement("video");
+            video.id = "camera-video";
+            video.autoplay = true;
+            video.playsInline = true;
+            video.muted = true;
+            video.setAttribute("playsinline", "true");
+            video.style.width = "100%";
+            video.style.display = "block";
+            video.style.background = "#000";
+
+            reader.appendChild(video);
+
+            video.srcObject = cameraStream;
+
+            await video.play();
+
+            scanning = true;
+            qrProcessing = false;
+
+            cameraButton.style.display = "none";
+            stopButton.style.display = "inline-block";
+
+            status.textContent =
+                "Camera active — place the UPI QR clearly inside the box.";
+
+            console.log("QR SCANNER STARTED");
+
+            scanQRCode(video);
+
+        } catch (error) {
+
+            console.error("CAMERA ERROR:", error);
+
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+
+            reader.innerHTML = "";
+            reader.style.display = "none";
+            scanning = false;
+
+            status.textContent = "Camera access failed.";
+
+            alert(
+                "Camera could not be started.\n\n" +
+                "Please allow camera permission and try again."
+            );
+        }
+    }
+
+
+    function scanQRCode(video) {
+
+        if (!scanning || qrProcessing) {
+            return;
+        }
+
+        if (video.readyState < 2 ||
+            video.videoWidth === 0 ||
+            video.videoHeight === 0) {
+
+            scanTimer = requestAnimationFrame(() => {
+                scanQRCode(video);
+            });
+
+            return;
+        }
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", {
+            willReadFrequently: true
+        });
+
+        const maxWidth = 1280;
+        const scale = Math.min(
+            1,
+            maxWidth / video.videoWidth
+        );
+
+        canvas.width = Math.floor(video.videoWidth * scale);
+        canvas.height = Math.floor(video.videoHeight * scale);
+
+        context.drawImage(
+            video,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        try {
+
+            const imageData = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            if (typeof jsQR !== "function") {
+                throw new Error("jsQR library not loaded.");
+            }
+
+            const code = jsQR(
+                imageData.data,
+                imageData.width,
+                imageData.height,
+                {
+                    inversionAttempts: "attemptBoth"
+                }
+            );
+
+            if (code && code.data) {
+
+                console.log("🔥 QR DETECTED:", code.data);
+
+                onCameraQRDetected(code.data);
+                return;
+            }
+
+        } catch (error) {
+            console.error("QR SCAN ERROR:", error);
+        }
+
+        scanTimer = requestAnimationFrame(() => {
+            scanQRCode(video);
+        });
+    }
+
+
+    function onCameraQRDetected(decodedText) {
+
+        if (qrProcessing || !decodedText) {
+            return;
+        }
+
+        const data = String(decodedText).trim();
+
+        if (!data) {
+            return;
+        }
+
+        qrProcessing = true;
+
+        console.log("UPI QR DETECTED:", data);
+
+        const status =
+            document.getElementById("camera-status");
+
+        if (status) {
+            status.textContent =
+                "QR detected ✓ Analyzing payment...";
+        }
+
+        handleQRResult(data);
+    }
+
+
+    /* =================================
+       STOP CAMERA
+    ================================= */
+
+    async function stopCamera() {
+
+        scanning = false;
+        qrProcessing = false;
+
+        if (scanTimer) {
+            cancelAnimationFrame(scanTimer);
+            scanTimer = null;
+        }
+
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => {
+                try {
+                    track.stop();
+                } catch (error) {
+                    console.log("Track stop error:", error);
+                }
+            });
+            cameraStream = null;
+        }
+
+        const reader =
+            document.getElementById("reader");
+
+        const cameraButton =
+            document.getElementById("camera-btn");
+
+        const stopButton =
+            document.getElementById("stop-btn");
+
+        const status =
+            document.getElementById("camera-status");
+
+        reader.innerHTML = "";
+        reader.style.display = "none";
+
+        cameraButton.style.display = "inline-block";
+        stopButton.style.display = "none";
+
+        status.textContent = "Camera stopped.";
+    }
+
+
+    /* =================================
+       QR DETECTED
+    ================================= */
+
+    async function handleQRResult(data) {
+
+        console.log("QR DATA:", data);
+
+        await stopCamera();
+
+        if (!data) {
+            alert("No QR data detected.");
+            return;
+        }
+
+        const lowerData = data.toLowerCase().trim();
+
+        if (!lowerData.startsWith("upi://pay")) {
+            alert("This is not a UPI payment QR.");
+            return;
+        }
+
+        sendCameraData(data);
+    }
+
+
+    /* =================================
+       SEND DATA TO FLASK
+    ================================= */
+
+    function sendCameraData(data) {
+
+        console.log("SENDING QR DATA TO FLASK:", data);
+
+        fetch("/upi-camera-scan", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                data: data
+            })
+        })
+        .then(response => {
+
+            if (!response.ok) {
+                throw new Error(
+                    "Server error: " + response.status
+                );
+            }
+
+            return response.text();
+        })
+        .then(html => {
+
+            console.log("UPI ANALYSIS RECEIVED");
+
+            document.open();
+            document.write(html);
+            document.close();
+        })
+        .catch(error => {
+
+            console.error("ANALYSIS ERROR:", error);
+
+            alert(
+                "Unable to analyze QR code.\n\n" +
+                error.message
+            );
+        });
+    }
+
+
+    /* =================================
+       STOP CAMERA WHEN LEAVING PAGE
+    ================================= */
+
+    window.addEventListener(
+        "beforeunload",
+        function() {
+
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => {
+                    try {
+                        track.stop();
+                    } catch (error) {}
+                });
+            }
+
+        }
+    );
+
+
+</script>
+
+
+</body>
+
+</html>

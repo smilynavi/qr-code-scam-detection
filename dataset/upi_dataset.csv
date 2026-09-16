@@ -1,0 +1,41 @@
+upi_id,merchant,amount,label
+smilynavi18@okhdfcbank,Smily Navi,500,0
+merchant@okaxis,ABC Stores,250,0
+shop@oksbi,Fresh Mart,800,0
+restaurant@okhdfcbank,Good Food,450,0
+store@okicici,City Store,1200,0
+business@okaxis,Online Shop,999,0
+medical@okhdfcbank,City Medicals,300,0
+travel@okicici,Travel Services,2500,0
+school@oksbi,ABC School,5000,0
+hotel@okaxis,City Hotel,1800,0
+coffee@oksbi,Coffee Shop,150,0
+bakery@okhdfcbank,Fresh Bakery,350,0
+clothing@okicici,Fashion Store,1500,0
+grocery@okaxis,Daily Grocery,700,0
+mobile@oksbi,Mobile Store,999,0
+books@okhdfcbank,Book Store,450,0
+hospital@okicici,City Hospital,2500,0
+college@okaxis,College Fees,10000,0
+fuel@oksbi,Petrol Station,2000,0
+restaurant@okicici,Food Corner,650,0
+freegift@paytm,Free Gift Winner,100,1
+winnercash@paytm,You Won Prize,500,1
+claimreward@okaxis,Claim Reward Now,200,1
+urgentpayment@oksbi,Urgent Payment,1000,1
+lotterywinner@okicici,Lucky Lottery Winner,500,1
+freecash@paytm,Free Cash Reward,300,1
+prizeclaim@okhdfcbank,Prize Claim,700,1
+verifyaccount@okaxis,Verify Account Now,100,1
+rewardgift@oksbi,Free Reward Gift,250,1
+urgentrefund@okicici,Urgent Refund Claim,400,1
+freebonus@paytm,Free Bonus Offer,200,1
+claimcash@okaxis,Claim Cash Prize,500,1
+winnerreward@oksbi,Winner Reward,1000,1
+accountverify@okicici,Account Verification,300,1
+urgentclaim@okhdfcbank,Urgent Claim Reward,600,1
+freeprize@paytm,Free Prize Winner,150,1
+giftwinner@okaxis,Gift Winner Claim,250,1
+passwordverify@oksbi,Password Verify,100,1
+securityverify@okicici,Security Verification,200,1
+rewardclaim@okhdfcbank,Reward Claim Now,500,1

@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>URL Security Analyzer</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#080909;
+    color:#fff;
+    font-family:Arial, Helvetica, sans-serif;
+    min-height:100vh;
+}
+
+/* NAV */
+
+nav{
+    height:75px;
+    padding:0 7%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid #202320;
+}
+
+.logo{
+    font-size:18px;
+    font-weight:800;
+}
+
+.logo span{
+    color:#b8ff20;
+}
+
+.nav-links{
+    display:flex;
+    gap:32px;
+}
+
+.nav-links a{
+    color:#777;
+    text-decoration:none;
+    font-size:13px;
+}
+
+.nav-links a:hover,
+.active{
+    color:#b8ff20 !important;
+}
+
+/* CONTAINER */
+
+.container{
+    max-width:1050px;
+    margin:auto;
+    padding:70px 25px 100px;
+}
+
+.label{
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:11px;
+    letter-spacing:3px;
+    margin-bottom:15px;
+}
+
+h1{
+    font-size:50px;
+    letter-spacing:-2px;
+    margin-bottom:15px;
+}
+
+.intro{
+    color:#777;
+    max-width:650px;
+    font-size:15px;
+    line-height:1.7;
+    margin-bottom:45px;
+}
+
+/* CARD */
+
+.scanner-card{
+    background:#101110;
+    border:1px solid #292c29;
+    border-radius:18px;
+    padding:35px;
+}
+
+.card-heading{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.card-heading h2{
+    font-size:15px;
+    letter-spacing:2px;
+}
+
+.status{
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:10px;
+}
+
+/* URL SEARCH */
+
+.url-box{
+    border:1px dashed #444;
+    background:#090a09;
+    border-radius:14px;
+    padding:35px;
+}
+
+.url-title{
+    font-size:22px;
+    margin-bottom:10px;
+}
+
+.url-description{
+    color:#666;
+    font-size:13px;
+    margin-bottom:25px;
+}
+
+/* SEARCH BAR */
+
+.search-area{
+    display:flex;
+    gap:10px;
+    width:100%;
+}
+
+#urlInput{
+    flex:1;
+    background:#111311;
+    border:1px solid #383b38;
+    color:#fff;
+    padding:16px 18px;
+    border-radius:8px;
+    outline:none;
+    font-size:13px;
+    font-family:monospace;
+}
+
+#urlInput:focus{
+    border-color:#b8ff20;
+}
+
+#urlInput::placeholder{
+    color:#555;
+}
+
+.analyze-btn{
+    background:#b8ff20;
+    color:#080909;
+    border:none;
+    padding:0 25px;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.analyze-btn:hover{
+    transform:translateY(-2px);
+}
+
+/* LOADING */
+
+#loading{
+    display:none;
+    margin-top:20px;
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:11px;
+}
+
+/* RESULT */
+
+.result{
+    margin-top:25px;
+    background:#0b0c0b;
+    border:1px solid #292c29;
+    border-radius:12px;
+    padding:25px;
+}
+
+.result-label{
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:10px;
+    letter-spacing:2px;
+    margin-bottom:18px;
+}
+
+.result-row{
+    margin-bottom:15px;
+}
+
+.result-title{
+    color:#666;
+    font-size:10px;
+    margin-bottom:5px;
+}
+
+.result-value{
+    color:#ddd;
+    font-family:monospace;
+    font-size:13px;
+    word-break:break-all;
+}
+
+/* STATUS */
+
+.result-status{
+    margin-top:20px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.safe{
+    color:#b8ff20;
+}
+
+.risk{
+    color:#ff5555;
+}
+
+.suspicious{
+    color:#ffaa00;
+}
+
+.unknown{
+    color:#888;
+}
+
+.result-message{
+    margin-top:12px;
+    color:#777;
+    font-size:12px;
+    line-height:1.6;
+}
+
+.result-counts{
+    margin-top:15px;
+    color:#777;
+    font-family:monospace;
+    font-size:11px;
+}
+
+/* ================= ML ANALYSIS ================= */
+
+.ml-panel{
+    margin-top:25px;
+    padding:22px;
+    background:#101210;
+    border:1px solid #292c29;
+    border-radius:12px;
+}
+
+.ml-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.ml-title{
+    font-size:13px;
+    font-weight:bold;
+    letter-spacing:1px;
+}
+
+.ml-badge{
+    font-family:monospace;
+    font-size:10px;
+    padding:6px 10px;
+    border:1px solid #333;
+    border-radius:20px;
+}
+
+.ml-safe{
+    color:#b8ff20;
+}
+
+.ml-suspicious{
+    color:#ffaa00;
+}
+
+.ml-risk{
+    color:#ff5555;
+}
+
+.ml-unknown{
+    color:#888;
+}
+
+/* PROBABILITY */
+
+.probability-header{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:8px;
+}
+
+.probability-label{
+    color:#777;
+    font-size:11px;
+}
+
+.probability-value{
+    font-family:monospace;
+    font-size:12px;
+}
+
+.progress{
+    width:100%;
+    height:9px;
+    background:#252725;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:100%;
+    border-radius:20px;
+    transition:width .6s ease;
+}
+
+.safe-bar{
+    background:#b8ff20;
+}
+
+.suspicious-bar{
+    background:#ffaa00;
+}
+
+.risk-bar{
+    background:#ff5555;
+}
+
+.unknown-bar{
+    background:#666;
+}
+
+/* ANALYSIS GRID */
+
+.analysis-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-top:18px;
+}
+
+.analysis-box{
+    background:#0b0c0b;
+    border:1px solid #242724;
+    border-radius:9px;
+    padding:15px;
+}
+
+.analysis-box-title{
+    color:#666;
+    font-size:9px;
+    font-family:monospace;
+    margin-bottom:8px;
+}
+
+.analysis-box-value{
+    font-size:14px;
+    font-weight:bold;
+}
+
+/* EXPLANATION */
+
+.explanation{
+    margin-top:18px;
+    padding:18px;
+    background:#0b0c0b;
+    border:1px solid #242724;
+    border-radius:9px;
+}
+
+.explanation-title{
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:10px;
+    letter-spacing:2px;
+    margin-bottom:10px;
+}
+
+.explanation-text{
+    color:#888;
+    font-size:12px;
+    line-height:1.7;
+}
+
+/* REASONS */
+
+.reasons{
+    margin-top:18px;
+}
+
+.reasons-title{
+    font-family:monospace;
+    color:#b8ff20;
+    font-size:10px;
+    letter-spacing:2px;
+    margin-bottom:12px;
+}
+
+.reason-item{
+    background:#17130b;
+    border:1px solid #3a3020;
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    color:#c9a96b;
+    font-size:11px;
+    line-height:1.5;
+}
+
+.no-reasons{
+    background:#101a0d;
+    border:1px solid #293c22;
+    border-radius:8px;
+    padding:13px;
+    color:#91b76b;
+    font-size:11px;
+}
+
+/* ERROR */
+
+.error{
+    margin-top:20px;
+    padding:15px;
+    border-radius:8px;
+    background:#211010;
+    border:1px solid #4b2727;
+    color:#ff7777;
+    font-size:12px;
+}
+
+/* FEATURES */
+
+.features{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+    margin-top:20px;
+}
+
+.feature{
+    background:#0b0c0b;
+    border:1px solid #242724;
+    border-radius:10px;
+    padding:20px;
+}
+
+.feature-number{
+    color:#b8ff20;
+    font-family:monospace;
+    font-size:10px;
+    margin-bottom:15px;
+}
+
+.feature h3{
+    font-size:14px;
+    margin-bottom:8px;
+}
+
+.feature p{
+    color:#666;
+    font-size:11px;
+    line-height:1.6;
+}
+
+/* FOOTER */
+
+footer{
+    border-top:1px solid #202320;
+    padding:25px 7%;
+    color:#444;
+    font-size:10px;
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+    nav{
+        padding:0 20px;
+    }
+
+    .nav-links{
+        gap:12px;
+    }
+
+    .nav-links a{
+        font-size:10px;
+    }
+
+    h1{
+        font-size:38px;
+    }
+
+    .scanner-card{
+        padding:20px;
+    }
+
+    .search-area{
+        flex-direction:column;
+    }
+
+    .analyze-btn{
+        padding:15px;
+    }
+
+    .features{
+        grid-template-columns:1fr;
+    }
+
+    .analysis-grid{
+        grid-template-columns:1fr;
+    }
+
+    .ml-header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<nav>
+
+    <div class="logo">
+        URL <span>/</span> UPI QR Analyzer
+    </div>
+
+    <div class="nav-links">
+
+        <a href="/">
+            HOME
+        </a>
+
+        <a href="/qr-scanner" class="active">
+            URL ANALYZER
+        </a>
+
+        <a href="/upi-payment">
+            UPI QR FOR PAYMENT
+        </a>
+
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <div class="label">
+        WEBSITE SECURITY
+    </div>
+
+    <h1>
+        URL ANALYZER
+    </h1>
+
+    <p class="intro">
+        Enter a website URL below to analyze its
+        security status using Machine Learning,
+        VirusTotal and security heuristics.
+    </p>
+
+
+    <div class="scanner-card">
+
+
+        <div class="card-heading">
+
+            <h2>
+                ANALYZE WEBSITE URL
+            </h2>
+
+            <span class="status">
+                ● SYSTEM READY
+            </span>
+
+        </div>
+
+
+        <div class="url-box">
+
+            <div class="url-title">
+                Check a Website
+            </div>
+
+            <div class="url-description">
+                Paste a URL below and analyze it before
+                opening the website.
+            </div>
+
+
+            <div class="search-area">
+
+                <input
+                    type="text"
+                    id="urlInput"
+                    placeholder="https://example.com"
+                    autocomplete="off"
+                >
+
+                <button
+                    class="analyze-btn"
+                    onclick="analyzeURL()">
+
+                    ANALYZE
+
+                </button>
+
+            </div>
+
+
+            <div id="loading">
+                ⟳ ANALYZING URL... PLEASE WAIT
+            </div>
+
+
+            <div id="result"></div>
+
+            <div id="error"></div>
+
+        </div>
+
+
+        <div class="features">
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    01
+                </div>
+
+                <h3>
+                    Enter URL
+                </h3>
+
+                <p>
+                    Paste the website URL
+                    you want to check.
+                </p>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    02
+                </div>
+
+                <h3>
+                    Analyze
+                </h3>
+
+                <p>
+                    ML model and VirusTotal
+                    analyze the URL.
+                </p>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-number">
+                    03
+                </div>
+
+                <h3>
+                    Protect
+                </h3>
+
+                <p>
+                    View the security result
+                    before visiting the website.
+                </p>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<footer>
+    URL ANALYZER / UPI QR ANALYZER
+</footer>
+
+
+<script>
+
+
+async function analyzeURL(){
+
+    const input =
+        document.getElementById("urlInput");
+
+    const loading =
+        document.getElementById("loading");
+
+    const result =
+        document.getElementById("result");
+
+    const errorBox =
+        document.getElementById("error");
+
+
+    const url =
+        input.value.trim();
+
+
+    result.innerHTML = "";
+    errorBox.innerHTML = "";
+
+
+    if(!url){
+
+        errorBox.innerHTML =
+            `<div class="error">
+                ❌ Please enter a URL.
+            </div>`;
+
+        return;
+    }
+
+
+    loading.style.display = "block";
+
+
+    try{
+
+        const response =
+            await fetch("/analyze-url",{
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body:JSON.stringify({
+                    url:url
+                })
+
+            });
+
+
+        const data =
+            await response.json();
+
+
+        loading.style.display = "none";
+
+
+        if(!response.ok || !data.success){
+
+            throw new Error(
+                data.error ||
+                "URL analysis failed."
+            );
+
+        }
+
+
+        /* =========================
+           STATUS CLASS
+        ========================= */
+
+        let statusClass = "unknown";
+
+        if(data.status === "SAFE"){
+            statusClass = "safe";
+        }
+        else if(data.status === "RISK"){
+            statusClass = "risk";
+        }
+        else if(data.status === "SUSPICIOUS"){
+            statusClass = "suspicious";
+        }
+
+
+        /* =========================
+           ML CLASS
+        ========================= */
+
+        let mlClass = "ml-unknown";
+
+        if(data.ml_status === "SAFE"){
+            mlClass = "ml-safe";
+        }
+        else if(data.ml_status === "RISK"){
+            mlClass = "ml-risk";
+        }
+        else if(data.ml_status === "SUSPICIOUS"){
+            mlClass = "ml-suspicious";
+        }
+
+
+        /* =========================
+           PROBABILITY
+        ========================= */
+
+        let probability =
+            Number(data.scam_probability || 0);
+
+        if(probability < 0){
+            probability = 0;
+        }
+
+        if(probability > 100){
+            probability = 100;
+        }
+
+
+        let barClass = "unknown-bar";
+
+        if(data.status === "SAFE"){
+            barClass = "safe-bar";
+        }
+        else if(data.status === "SUSPICIOUS"){
+            barClass = "suspicious-bar";
+        }
+        else if(data.status === "RISK"){
+            barClass = "risk-bar";
+        }
+
+
+        /* =========================
+           ML EXPLANATION
+        ========================= */
+
+        let explanation = "";
+
+        if(data.status === "SAFE"){
+
+            explanation =
+                "The Machine Learning model found low-risk " +
+                "URL characteristics. No specific suspicious " +
+                "patterns were detected by the available " +
+                "analysis methods. The URL can still be verified " +
+                "before entering sensitive information.";
+
+        }
+        else if(data.status === "SUSPICIOUS"){
+
+            explanation =
+                "The analyzer detected one or more suspicious " +
+                "characteristics. These may include unusual URL " +
+                "structure, suspicious keywords, or security " +
+                "signals. Verify the website before continuing.";
+
+        }
+        else if(data.status === "RISK"){
+
+            explanation =
+                "High-risk indicators were detected. The URL " +
+                "may be associated with phishing or malicious " +
+                "activity. Avoid opening the website or entering " +
+                "personal, banking, password or OTP information.";
+
+        }
+        else{
+
+            explanation =
+                "The available analysis could not confidently " +
+                "classify this URL.";
+
+        }
+
+
+        /* =========================
+           DETECTED REASONS
+        ========================= */
+
+        let reasonsHTML = "";
+
+        const reasons =
+            data.local_reasons ||
+            data.reasons ||
+            [];
+
+
+        if(reasons.length > 0){
+
+            reasonsHTML =
+                reasons.map(function(reason){
+
+                    return `
+                        <div class="reason-item">
+                            ⚠ ${escapeHTML(reason)}
+                        </div>
+                    `;
+
+                }).join("");
+
+        }
+        else{
+
+            reasonsHTML = `
+                <div class="no-reasons">
+                    ✓ No specific suspicious URL patterns were detected.
+                </div>
+            `;
+
+        }
+
+
+        /* =========================
+           RESULT HTML
+        ========================= */
+
+        result.innerHTML = `
+
+            <div class="result">
+
+                <div class="result-label">
+                    URL ANALYSIS RESULT
+                </div>
+
+
+                <!-- URL -->
+
+                <div class="result-row">
+
+                    <div class="result-title">
+                        ANALYZED URL
+                    </div>
+
+                    <div class="result-value">
+                        ${escapeHTML(data.url)}
+                    </div>
+
+                </div>
+
+
+                <!-- FINAL STATUS -->
+
+                <div class="result-status ${statusClass}">
+
+                    STATUS:
+                    ${escapeHTML(data.status)}
+
+                </div>
+
+
+                <div class="result-message">
+
+                    ${escapeHTML(data.message)}
+
+                </div>
+
+
+                <!-- ML PANEL -->
+
+                <div class="ml-panel">
+
+                    <div class="ml-header">
+
+                        <div class="ml-title">
+                            🤖 MACHINE LEARNING ANALYSIS
+                        </div>
+
+                        <div class="ml-badge ${mlClass}">
+                            ${escapeHTML(
+                                data.ml_status || "UNKNOWN"
+                            )}
+                        </div>
+
+                    </div>
+
+
+                    <!-- PROBABILITY -->
+
+                    <div class="probability-header">
+
+                        <span class="probability-label">
+                            SCAM PROBABILITY
+                        </span>
+
+                        <span class="probability-value">
+                            ${probability.toFixed(2)}%
+                        </span>
+
+                    </div>
+
+
+                    <div class="progress">
+
+                        <div
+                            class="progress-bar ${barClass}"
+                            style="width:${probability}%">
+                        </div>
+
+                    </div>
+
+
+                    <!-- ANALYSIS GRID -->
+
+                    <div class="analysis-grid">
+
+
+                        <div class="analysis-box">
+
+                            <div class="analysis-box-title">
+                                ML PREDICTION
+                            </div>
+
+                            <div class="analysis-box-value">
+                                ${
+                                    data.ml_prediction === 1
+                                    ? "PHISHING / RISK"
+                                    : data.ml_prediction === 0
+                                    ? "SAFE"
+                                    : "UNKNOWN"
+                                }
+                            </div>
+
+                        </div>
+
+
+                        <div class="analysis-box">
+
+                            <div class="analysis-box-title">
+                                VT MALICIOUS
+                            </div>
+
+                            <div class="analysis-box-value">
+                                ${Number(data.malicious || 0)}
+                            </div>
+
+                        </div>
+
+
+                        <div class="analysis-box">
+
+                            <div class="analysis-box-title">
+                                VT SUSPICIOUS
+                            </div>
+
+                            <div class="analysis-box-value">
+                                ${Number(data.suspicious || 0)}
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- EXPLANATION -->
+
+                    <div class="explanation">
+
+                        <div class="explanation-title">
+                            MODEL EXPLANATION
+                        </div>
+
+                        <div class="explanation-text">
+                            ${escapeHTML(explanation)}
+                        </div>
+
+                    </div>
+
+
+                    <!-- REASONS -->
+
+                    <div class="reasons">
+
+                        <div class="reasons-title">
+                            DETECTED REASONS
+                        </div>
+
+                        ${reasonsHTML}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- VT COUNTS -->
+
+                <div class="result-counts">
+
+                    VIRUSTOTAL
+
+                    &nbsp;|&nbsp;
+
+                    MALICIOUS:
+                    ${Number(data.malicious || 0)}
+
+                    &nbsp;|&nbsp;
+
+                    SUSPICIOUS:
+                    ${Number(data.suspicious || 0)}
+
+                </div>
+
+            </div>
+
+        `;
+
+
+    }
+    catch(error){
+
+        loading.style.display = "none";
+
+        console.error(
+            "URL ANALYSIS ERROR:",
+            error
+        );
+
+
+        errorBox.innerHTML = `
+
+            <div class="error">
+
+                ❌ ${escapeHTML(error.message)}
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+/* =========================
+   HTML ESCAPE
+========================= */
+
+function escapeHTML(value){
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        value ?? "";
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================
+   ENTER KEY
+========================= */
+
+document
+    .getElementById("urlInput")
+    .addEventListener(
+        "keydown",
+        function(event){
+
+            if(event.key === "Enter"){
+
+                analyzeURL();
+
+            }
+
+        }
+    );
+
+
+</script>
+
+
+</body>
+
+</html>

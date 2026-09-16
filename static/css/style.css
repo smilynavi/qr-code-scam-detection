@@ -1,0 +1,34 @@
+/* 3D QR Scanner */
+
+.upload-box {
+    border: none;
+    background: transparent;
+    padding: 25px 10px 35px;
+    text-align: center;
+}
+
+.upload-box h2 {
+    color: #1e3a8a;
+    margin-bottom: 25px;
+}
+
+
+
+
+/* Upload Button Area */
+
+.upload-box input[type="file"] {
+    background: white;
+    border: 1px solid #cbd5e1;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+}
+
+.scanner-qr-image {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 25px;
+}
