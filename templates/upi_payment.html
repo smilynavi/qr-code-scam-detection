@@ -1823,19 +1823,473 @@
                 );
             }
 
-            return response.text();
+            return response.json();
         })
-        .then(html => {
+        .then(responseData => {
 
-            console.log("UPI ANALYSIS RECEIVED");
+            console.log(
+                "UPI ANALYSIS RECEIVED:",
+                responseData
+            );
 
-            document.open();
-            document.write(html);
-            document.close();
+            if (!responseData.success ||
+                !responseData.result) {
+
+                throw new Error(
+                    "Invalid analysis response."
+                );
+            }
+
+            const upi = responseData.result;
+
+            function escapeHTML(value) {
+
+                return String(value ?? "")
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            const status =
+                String(upi.status || "SAFE").toUpperCase();
+
+            let badgeClass = "badge-suspicious";
+            let securityClass = "security-suspicious";
+            let securityTitle = "⚠ SUSPICIOUS PAYMENT";
+
+            if (status === "SAFE") {
+
+                badgeClass = "badge-safe";
+                securityClass = "security-safe";
+                securityTitle = "✓ PAYMENT LOOKS SAFE";
+
+            } else if (status === "RISK") {
+
+                badgeClass = "badge-risk";
+                securityClass = "security-risk";
+                securityTitle = "⚠ PAYMENT RISK DETECTED";
+            }
+
+            const score =
+                Number(upi.score ?? 0);
+
+            const safeScore =
+                Math.max(0, Math.min(score, 10));
+
+            const riskPercentage =
+                safeScore * 10;
+
+            const mlPrediction =
+                upi.ml_prediction;
+
+            const mlPredictionText =
+                mlPrediction !== null &&
+                mlPrediction !== undefined
+                    ? Number(mlPrediction) === 1
+                        ? "RISK"
+                        : "SAFE"
+                    : "NOT AVAILABLE";
+
+            const mlStatus =
+                upi.ml_status ||
+                "NOT AVAILABLE";
+
+            let probability =
+                Number(upi.scam_probability ?? 0);
+
+            if (!Number.isFinite(probability)) {
+                probability = 0;
+            }
+
+            if (probability <= 1) {
+                probability = probability * 100;
+            }
+
+            probability =
+                Math.max(0, Math.min(probability, 100));
+
+            probability =
+                Math.round(probability);
+
+            let reasonsHTML = "";
+
+            if (Array.isArray(upi.reasons) &&
+                upi.reasons.length > 0) {
+
+                reasonsHTML = `
+                    <div class="reasons-box">
+
+                        <div class="reasons-title">
+                            DETECTED REASONS
+                        </div>
+
+                        ${upi.reasons.map(reason => `
+                            <div class="reason-item">
+
+                                <span>
+                                    •
+                                </span>
+
+                                ${escapeHTML(reason)}
+
+                            </div>
+                        `).join("")}
+
+                    </div>
+                `;
+            }
+
+            let paymentHTML = "";
+
+            if (upi.payment_url) {
+
+                paymentHTML = `
+                    <a
+                        href="${escapeHTML(upi.payment_url)}"
+                        class="payment-btn">
+
+                        CONTINUE TO PAYMENT
+
+                        <span>
+                            →
+                        </span>
+
+                    </a>
+
+                    <div class="payment-warning">
+
+                        Verify the merchant and UPI ID before confirming the payment.
+
+                    </div>
+                `;
+            }
+
+            let resultBox =
+                document.querySelector(
+                    ".scanner-card .result"
+                );
+
+            if (!resultBox) {
+
+                resultBox =
+                    document.createElement("div");
+
+                resultBox.className = "result";
+
+                const scannerCard =
+                    document.querySelector(
+                        ".scanner-card"
+                    );
+
+                const insertBeforeElement =
+                    scannerCard.querySelector(".error") ||
+                    scannerCard.querySelector(".features");
+
+                if (insertBeforeElement) {
+
+                    scannerCard.insertBefore(
+                        resultBox,
+                        insertBeforeElement
+                    );
+
+                } else {
+
+                    scannerCard.appendChild(resultBox);
+                }
+            }
+
+            resultBox.innerHTML = `
+
+                <!-- RESULT HEADER -->
+
+                <div class="result-top">
+
+                    <div class="result-label">
+                        UPI QR DATA DETECTED
+                    </div>
+
+                    <div class="verified-badge ${badgeClass}">
+
+                        ● ${escapeHTML(status)}
+
+                    </div>
+
+                </div>
+
+
+                <!-- PAYMENT DETAILS -->
+
+                <div class="payment-details">
+
+
+                    <!-- MERCHANT -->
+
+                    <div class="detail-card">
+
+                        <div class="detail-icon">
+                            🏪
+                        </div>
+
+                        <div>
+
+                            <div class="result-title">
+                                MERCHANT
+                            </div>
+
+                            <div class="result-value">
+                                ${escapeHTML(
+                                    upi.merchant || "Unknown"
+                                )}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- UPI ID -->
+
+                    <div class="detail-card">
+
+                        <div class="detail-icon">
+                            💳
+                        </div>
+
+                        <div>
+
+                            <div class="result-title">
+                                UPI ID
+                            </div>
+
+                            <div class="result-value">
+                                ${escapeHTML(
+                                    upi.upi_id || "Unknown"
+                                )}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- AMOUNT -->
+
+                    <div class="detail-card">
+
+                        <div class="detail-icon">
+                            ₹
+                        </div>
+
+                        <div>
+
+                            <div class="result-title">
+                                AMOUNT
+                            </div>
+
+                            <div class="result-value">
+                                ${escapeHTML(
+                                    upi.amount ||
+                                    "Not Specified"
+                                )}
+                                ${escapeHTML(
+                                    upi.currency || "INR"
+                                )}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SECURITY STATUS -->
+
+                <div class="security-box ${securityClass}">
+
+                    <div class="security-title">
+
+                        ${securityTitle}
+
+                    </div>
+
+                    <div class="result-message">
+
+                        ${escapeHTML(
+                            upi.message ||
+                            "Payment QR analyzed successfully."
+                        )}
+
+                    </div>
+
+                </div>
+
+
+                <!-- ML ANALYSIS -->
+
+                <div class="ml-section">
+
+                    <div class="ml-title">
+                        🤖 MACHINE LEARNING ANALYSIS
+                    </div>
+
+
+                    <div class="ml-grid">
+
+
+                        <div class="ml-card">
+
+                            <div class="ml-card-title">
+                                ML PREDICTION
+                            </div>
+
+                            <div class="ml-card-value">
+                                ${escapeHTML(
+                                    mlPredictionText
+                                )}
+                            </div>
+
+                        </div>
+
+
+                        <div class="ml-card">
+
+                            <div class="ml-card-title">
+                                MODEL STATUS
+                            </div>
+
+                            <div class="ml-card-value">
+                                ${escapeHTML(
+                                    mlStatus
+                                )}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ML PROBABILITY -->
+
+                    <div class="ml-probability">
+
+                        <div class="ml-probability-header">
+
+                            <span>
+                                SCAM PROBABILITY
+                            </span>
+
+                            <strong id="cameraMlProbability">
+                                ${probability}%
+                            </strong>
+
+                        </div>
+
+
+                        <div class="ml-bar">
+
+                            <div
+                                class="ml-fill"
+                                id="cameraMlFill"
+                                style="width: ${probability}%">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ml-explanation">
+
+                        ${escapeHTML(
+                            upi.ml_explanation ||
+                            "ML analysis will appear here when the UPI-specific machine learning model is enabled."
+                        )}
+
+                    </div>
+
+                </div>
+
+
+                <!-- RISK SCORE -->
+
+                <div class="risk-section">
+
+                    <div class="risk-header">
+
+                        <span>
+                            RISK SCORE
+                        </span>
+
+                        <strong id="cameraRiskScoreValue">
+                            ${escapeHTML(score)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="risk-bar">
+
+                        <div
+                            id="cameraRiskFill"
+                            class="risk-fill ${
+                                status === "SAFE"
+                                    ? "fill-safe"
+                                    : status === "RISK"
+                                        ? "fill-risk"
+                                        : "fill-suspicious"
+                            }"
+                            style="width: ${riskPercentage}%">
+                        </div>
+
+                    </div>
+
+
+                    <div class="risk-info">
+
+                        Lower score indicates fewer suspicious indicators.
+
+                    </div>
+
+                </div>
+
+
+                <!-- DETECTED REASONS -->
+
+                ${reasonsHTML}
+
+
+                <!-- PAYMENT BUTTON -->
+
+                ${paymentHTML}
+
+            `;
+
+            const cameraStatus =
+                document.getElementById(
+                    "camera-status"
+                );
+
+            if (cameraStatus) {
+
+                cameraStatus.textContent =
+                    "QR analyzed successfully ✓";
+            }
+
+            resultBox.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
         })
         .catch(error => {
 
-            console.error("ANALYSIS ERROR:", error);
+            console.error(
+                "ANALYSIS ERROR:",
+                error
+            );
 
             alert(
                 "Unable to analyze QR code.\n\n" +
@@ -1843,6 +2297,7 @@
             );
         });
     }
+
 
 
     /* =================================
