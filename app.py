@@ -16,6 +16,25 @@ app = Flask(__name__)
 
 
 # =========================================================
+# PWA FILE ROUTES
+# =========================================================
+
+@app.route("/manifest.json")
+def manifest():
+    response = app.send_static_file("manifest.json")
+    response.headers["Content-Type"] = "application/manifest+json"
+    return response
+
+
+@app.route("/service-worker.js")
+def service_worker():
+    response = app.send_static_file("service-worker.js")
+    response.headers["Content-Type"] = "application/javascript"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
+# =========================================================
 # BASE DIRECTORY
 # =========================================================
 

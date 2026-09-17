@@ -1,0 +1,11 @@
+{
+  "name": "QR Code Scam Detection",
+  "short_name": "QR Scam Detection",
+  "description": "Detect suspicious and scam QR codes before scanning or making payments.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait-primary"
+}
