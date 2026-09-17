@@ -1516,38 +1516,34 @@
 
     /* =================================
        CAMERA QR SCANNER
-       DIRECT CAMERA + jsQR
+       DESKTOP + MOBILE - FINAL
+       jsQR + getUserMedia
     ================================= */
 
     let cameraStream = null;
     let scanning = false;
     let qrProcessing = false;
     let scanTimer = null;
-
+    let qrCanvas = null;
+    let qrContext = null;
+    let scanSession = 0;
 
     async function startCamera() {
+        if (scanning) return;
 
-        if (scanning) {
-            return;
-        }
+        const reader = document.getElementById("reader");
+        const status = document.getElementById("camera-status");
+        const cameraButton = document.getElementById("camera-btn");
+        const stopButton = document.getElementById("stop-btn");
 
-        const reader =
-            document.getElementById("reader");
+        /* Stop any previous session completely */
+        await stopCamera(true);
 
-        const status =
-            document.getElementById("camera-status");
-
-        const cameraButton =
-            document.getElementById("camera-btn");
-
-        const stopButton =
-            document.getElementById("stop-btn");
-
+        const thisSession = ++scanSession;
         reader.style.display = "block";
         status.textContent = "Starting camera...";
 
         try {
-
             if (!navigator.mediaDevices ||
                 !navigator.mediaDevices.getUserMedia) {
                 throw new Error("Camera API is not supported by this browser.");
@@ -1557,57 +1553,92 @@
                 video: {
                     facingMode: { ideal: "environment" },
                     width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30, max: 30 }
                 },
                 audio: false
             });
 
-            console.log("CAMERA STREAM STARTED");
+            if (thisSession !== scanSession) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+                return;
+            }
+
+            /* Optional autofocus / zoom. Failure here must NOT stop scanning. */
+            try {
+                const track = cameraStream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                const advanced = [];
+
+                if (capabilities.focusMode &&
+                    capabilities.focusMode.includes("continuous")) {
+                    advanced.push({ focusMode: "continuous" });
+                }
+
+                if (capabilities.zoom &&
+                    typeof capabilities.zoom.min === "number" &&
+                    typeof capabilities.zoom.max === "number") {
+                    const zoomValue = Math.min(
+                        capabilities.zoom.max,
+                        Math.max(capabilities.zoom.min, capabilities.zoom.min + 0.5)
+                    );
+                    advanced.push({ zoom: zoomValue });
+                }
+
+                if (advanced.length && track.applyConstraints) {
+                    await track.applyConstraints({ advanced });
+                }
+            } catch (e) {
+                console.log("Optional camera controls unavailable:", e);
+            }
 
             reader.innerHTML = "";
 
             const video = document.createElement("video");
             video.id = "camera-video";
             video.autoplay = true;
-            video.playsInline = true;
             video.muted = true;
+            video.playsInline = true;
             video.setAttribute("playsinline", "true");
+            video.setAttribute("webkit-playsinline", "true");
             video.style.width = "100%";
+            video.style.height = "auto";
             video.style.display = "block";
             video.style.background = "#000";
-
+            video.style.objectFit = "contain";
             reader.appendChild(video);
 
             video.srcObject = cameraStream;
-
             await video.play();
+
+            qrCanvas = document.createElement("canvas");
+            qrContext = qrCanvas.getContext("2d", { willReadFrequently: true });
 
             scanning = true;
             qrProcessing = false;
-
             cameraButton.style.display = "none";
             stopButton.style.display = "inline-block";
+            status.textContent = "Camera active — place the UPI QR clearly inside the box.";
 
-            status.textContent =
-                "Camera active — place the UPI QR clearly inside the box.";
-
-            console.log("QR SCANNER STARTED");
-
-            scanQRCode(video);
+            console.log("QR SCANNER STARTED - DESKTOP + MOBILE");
+            scanQRCode(video, thisSession);
 
         } catch (error) {
-
             console.error("CAMERA ERROR:", error);
+            scanning = false;
 
             if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream.getTracks().forEach(track => {
+                    try { track.stop(); } catch (e) {}
+                });
                 cameraStream = null;
             }
 
             reader.innerHTML = "";
             reader.style.display = "none";
-            scanning = false;
-
+            cameraButton.style.display = "inline-block";
+            stopButton.style.display = "none";
             status.textContent = "Camera access failed.";
 
             alert(
@@ -1617,72 +1648,64 @@
         }
     }
 
+    function scanQRCode(video, session) {
+        if (!scanning || qrProcessing || session !== scanSession) return;
 
-    function scanQRCode(video) {
-
-        if (!scanning || qrProcessing) {
+        if (!video || video.readyState < 2 ||
+            video.videoWidth <= 0 || video.videoHeight <= 0) {
+            scanTimer = setTimeout(() => scanQRCode(video, session), 100);
             return;
         }
-
-        if (video.readyState < 2 ||
-            video.videoWidth === 0 ||
-            video.videoHeight === 0) {
-
-            scanTimer = requestAnimationFrame(() => {
-                scanQRCode(video);
-            });
-
-            return;
-        }
-
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d", {
-            willReadFrequently: true
-        });
-
-        const maxWidth = 1280;
-        const scale = Math.min(
-            1,
-            maxWidth / video.videoWidth
-        );
-
-        canvas.width = Math.floor(video.videoWidth * scale);
-        canvas.height = Math.floor(video.videoHeight * scale);
-
-        context.drawImage(
-            video,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
 
         try {
-
-            const imageData = context.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
             if (typeof jsQR !== "function") {
                 throw new Error("jsQR library not loaded.");
             }
 
-            const code = jsQR(
-                imageData.data,
-                imageData.width,
-                imageData.height,
-                {
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+
+            /* Keep high enough resolution for laptop webcams and phones. */
+            const maxWidth = 1280;
+            const scale = Math.min(1, maxWidth / vw);
+            const width = Math.max(320, Math.floor(vw * scale));
+            const height = Math.max(240, Math.floor(vh * scale));
+
+            qrCanvas.width = width;
+            qrCanvas.height = height;
+
+            /* ---------- PASS 1: FULL CAMERA FRAME ---------- */
+            qrContext.drawImage(video, 0, 0, width, height);
+            let data = qrContext.getImageData(0, 0, width, height);
+            let code = jsQR(data.data, data.width, data.height, {
+                inversionAttempts: "attemptBoth"
+            });
+
+            /* ---------- PASS 2: CENTER CROP ---------- */
+            if (!code) {
+                const cropRatio = 0.82;
+                const cropW = Math.floor(width * cropRatio);
+                const cropH = Math.floor(height * cropRatio);
+                const cropX = Math.floor((width - cropW) / 2);
+                const cropY = Math.floor((height - cropH) / 2);
+
+                qrContext.drawImage(
+                    video,
+                    Math.floor(vw * cropX / width),
+                    Math.floor(vh * cropY / height),
+                    Math.floor(vw * cropW / width),
+                    Math.floor(vh * cropH / height),
+                    0, 0, cropW, cropH
+                );
+
+                data = qrContext.getImageData(0, 0, cropW, cropH);
+                code = jsQR(data.data, data.width, data.height, {
                     inversionAttempts: "attemptBoth"
-                }
-            );
+                });
+            }
 
             if (code && code.data) {
-
-                console.log("🔥 QR DETECTED:", code.data);
-
+                console.log("QR DETECTED:", code.data);
                 onCameraQRDetected(code.data);
                 return;
             }
@@ -1691,86 +1714,84 @@
             console.error("QR SCAN ERROR:", error);
         }
 
-        scanTimer = requestAnimationFrame(() => {
-            scanQRCode(video);
-        });
+        if (scanning && !qrProcessing && session === scanSession) {
+            scanTimer = setTimeout(() => scanQRCode(video, session), 80);
+        }
     }
 
-
     function onCameraQRDetected(decodedText) {
-
-        if (qrProcessing || !decodedText) {
-            return;
-        }
+        if (qrProcessing || !decodedText) return;
 
         const data = String(decodedText).trim();
-
-        if (!data) {
-            return;
-        }
+        if (!data) return;
 
         qrProcessing = true;
 
-        console.log("UPI QR DETECTED:", data);
-
-        const status =
-            document.getElementById("camera-status");
-
+        const status = document.getElementById("camera-status");
         if (status) {
-            status.textContent =
-                "QR detected ✓ Analyzing payment...";
+            status.textContent = "QR detected ✓ Analyzing payment...";
         }
 
+        console.log("UPI QR DETECTED:", data);
         handleQRResult(data);
     }
 
-
     /* =================================
-       STOP CAMERA
+       STOP CAMERA - HARD STOP
     ================================= */
 
-    async function stopCamera() {
-
+    async function stopCamera(silent = false) {
+        /* Invalidate every old scan loop immediately. */
+        scanSession++;
         scanning = false;
         qrProcessing = false;
 
-        if (scanTimer) {
-            cancelAnimationFrame(scanTimer);
+        if (scanTimer !== null) {
+            clearTimeout(scanTimer);
             scanTimer = null;
         }
 
+        /* Stop every active video track. */
         if (cameraStream) {
-            cameraStream.getTracks().forEach(track => {
+            const tracks = cameraStream.getTracks();
+            tracks.forEach(track => {
                 try {
                     track.stop();
-                } catch (error) {
-                    console.log("Track stop error:", error);
+                } catch (e) {
+                    console.log("Camera track stop error:", e);
                 }
             });
             cameraStream = null;
         }
 
-        const reader =
-            document.getElementById("reader");
+        const video = document.getElementById("camera-video");
+        if (video) {
+            try {
+                video.pause();
+                video.srcObject = null;
+                video.remove();
+            } catch (e) {
+                console.log("Video cleanup error:", e);
+            }
+        }
 
-        const cameraButton =
-            document.getElementById("camera-btn");
+        qrCanvas = null;
+        qrContext = null;
 
-        const stopButton =
-            document.getElementById("stop-btn");
+        const reader = document.getElementById("reader");
+        const cameraButton = document.getElementById("camera-btn");
+        const stopButton = document.getElementById("stop-btn");
+        const status = document.getElementById("camera-status");
 
-        const status =
-            document.getElementById("camera-status");
+        if (reader) {
+            reader.innerHTML = "";
+            reader.style.display = "none";
+        }
 
-        reader.innerHTML = "";
-        reader.style.display = "none";
-
-        cameraButton.style.display = "inline-block";
-        stopButton.style.display = "none";
-
-        status.textContent = "Camera stopped.";
+        if (cameraButton) cameraButton.style.display = "inline-block";
+        if (stopButton) stopButton.style.display = "none";
+        if (status && !silent) status.textContent = "Camera stopped.";
     }
-
 
     /* =================================
        QR DETECTED
@@ -2323,6 +2344,15 @@
 </script>
 
 
+
+<script>
+window.addEventListener("pagehide", function () {
+    if (typeof stopCamera === "function") stopCamera(true);
+});
+window.addEventListener("beforeunload", function () {
+    if (typeof stopCamera === "function") stopCamera(true);
+});
+</script>
 </body>
 
 </html>
