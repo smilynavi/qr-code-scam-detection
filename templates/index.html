@@ -4,7 +4,27 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <!-- PWA -->
+    <meta
+        name="theme-color"
+        content="#080909"
+    >
+
+    <link
+        rel="manifest"
+        href="{{ url_for('static', filename='manifest.json') }}"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="{{ url_for('static', filename='images/icon-192.png') }}"
+    >
 
     <title>URL ANALYZER / UPI QR Analyzer</title>
 
@@ -149,6 +169,7 @@
         .buttons {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -163,6 +184,10 @@
             font-weight: bold;
 
             transition: 0.3s;
+
+            border: none;
+
+            cursor: pointer;
         }
 
         .primary {
@@ -180,6 +205,25 @@
 
         .btn:hover {
             transform: translateY(-2px);
+        }
+
+
+        /* =========================
+           PWA INSTALL BUTTON
+        ========================== */
+
+        #install-app-btn {
+            border: 1px solid #b8ff20;
+
+            color: #b8ff20;
+
+            background: #111211;
+        }
+
+        #install-app-btn:hover {
+            background: #b8ff20;
+
+            color: #080909;
         }
 
 
@@ -432,7 +476,11 @@
 <nav>
 
     <div class="logo">
-        URL ANALYZER <span>/</span> UPI QR Analyzer
+
+        URL ANALYZER
+        <span>/</span>
+        UPI QR Analyzer
+
     </div>
 
 
@@ -474,26 +522,34 @@
 
 
         <h1>
+
             Scan smart.<br>
-            <span>Stay safe.</span>
+
+            <span>
+                Stay safe.
+            </span>
+
         </h1>
 
 
         <p>
+
             Analyze URL/QR before opening websites
             or making digital payments. Detect suspicious
             links and verify UPI payment information
             through one secure platform.
+
         </p>
 
 
         <div class="buttons">
 
+
             <a
                 href="/qr-scanner"
                 class="btn primary"
             >
-                URl ANALYZER →
+                URL ANALYZER →
             </a>
 
 
@@ -503,6 +559,18 @@
             >
                 Verify UPI QR
             </a>
+
+
+            <!-- PWA INSTALL BUTTON -->
+
+            <button
+                type="button"
+                id="install-app-btn"
+                class="btn secondary"
+            >
+                📲 INSTALL APP
+            </button>
+
 
         </div>
 
@@ -543,10 +611,12 @@
 
 
         <p>
+
             Enter a website URL and analyze its security
             to detect potentially malicious or suspicious
             activity before opening it.
-        </p>    
+
+        </p>
 
 
         <a
@@ -583,9 +653,11 @@
 
 
         <p>
+
             Analyze UPI QR codes, identify the
             payment details and verify the payment
             information before proceeding.
+
         </p>
 
 
@@ -634,8 +706,10 @@
             </h3>
 
             <p>
+
                 Provide a QR code image or use
                 your device camera to scan it.
+
             </p>
 
         </div>
@@ -653,9 +727,11 @@
             </h3>
 
             <p>
+
                 Our system extracts the QR data
                 and checks the destination or payment
                 information.
+
             </p>
 
         </div>
@@ -673,9 +749,11 @@
             </h3>
 
             <p>
+
                 View the security result before
                 opening a website or proceeding
                 with a payment.
+
             </p>
 
         </div>
@@ -704,7 +782,170 @@
 </footer>
 
 
+
+<!-- =========================
+     PWA INSTALL + SERVICE WORKER
+========================== -->
+
+<script>
+
+    let deferredPrompt = null;
+
+
+    const installButton =
+        document.getElementById(
+            "install-app-btn"
+        );
+
+
+    /*
+     * Browser says PWA can be installed
+     */
+
+    window.addEventListener(
+        "beforeinstallprompt",
+        function (event) {
+
+            event.preventDefault();
+
+            deferredPrompt = event;
+
+            console.log(
+                "PWA INSTALL PROMPT AVAILABLE"
+            );
+
+        }
+    );
+
+
+    /*
+     * INSTALL APP BUTTON
+     */
+
+    if (installButton) {
+
+        installButton.addEventListener(
+            "click",
+            async function () {
+
+
+                /*
+                 * Browser provides
+                 * install prompt
+                 */
+
+                if (deferredPrompt) {
+
+                    deferredPrompt.prompt();
+
+
+                    const choice =
+                        await deferredPrompt.userChoice;
+
+
+                    console.log(
+                        "INSTALL RESULT:",
+                        choice.outcome
+                    );
+
+
+                    deferredPrompt = null;
+
+                    return;
+
+                }
+
+
+                /*
+                 * Browser does not provide
+                 * install prompt
+                 */
+
+                alert(
+
+                    "Install option is not available yet.\n\n" +
+
+                    "Chrome: open the browser menu and select " +
+
+                    "\"Install QR Code Scam Detection\" " +
+
+                    "or \"Add to Home screen\"."
+
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+     * PWA INSTALLED
+     */
+
+    window.addEventListener(
+        "appinstalled",
+        function () {
+
+            console.log(
+                "QR CODE SCAM DETECTION INSTALLED"
+            );
+
+
+            if (installButton) {
+
+                installButton.style.display =
+                    "none";
+
+            }
+
+        }
+    );
+
+
+    /*
+     * SERVICE WORKER
+     */
+
+    if ("serviceWorker" in navigator) {
+
+        window.addEventListener(
+            "load",
+            function () {
+
+                navigator.serviceWorker
+                    .register(
+                        "/service-worker.js"
+                    )
+                    .then(
+                        function (registration) {
+
+                            console.log(
+                                "SERVICE WORKER REGISTERED:",
+                                registration.scope
+                            );
+
+                        }
+                    )
+                    .catch(
+                        function (error) {
+
+                            console.error(
+                                "SERVICE WORKER REGISTRATION FAILED:",
+                                error
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+    }
+
+</script>
+
+
 </body>
 
 </html>
-

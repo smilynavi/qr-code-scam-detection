@@ -5,7 +5,9 @@ const FILES_TO_CACHE = [
     "/qr-scanner",
     "/upi-payment",
     "/static/css/style.css",
-    "/static/js/script.js"
+    "/static/js/script.js",
+    "/static/images/icon-192.png",
+    "/static/images/icon-512.png"
 ];
 
 self.addEventListener("install", event => {
