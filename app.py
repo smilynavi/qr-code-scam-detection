@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+
 import os
 import re
 import time
@@ -16,31 +17,48 @@ app = Flask(__name__)
 
 
 # =========================================================
-# PWA FILE ROUTES
-# =========================================================
-
-@app.route("/manifest.json")
-def manifest():
-    response = app.send_static_file("manifest.json")
-    response.headers["Content-Type"] = "application/manifest+json"
-    return response
-
-
-@app.route("/service-worker.js")
-def service_worker():
-    response = app.send_static_file("service-worker.js")
-    response.headers["Content-Type"] = "application/javascript"
-    response.headers["Service-Worker-Allowed"] = "/"
-    return response
-
-
-# =========================================================
 # BASE DIRECTORY
 # =========================================================
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
+
+
+# =========================================================
+# PWA FILE ROUTES
+# =========================================================
+
+@app.route("/manifest.json")
+def manifest():
+
+    response = app.send_static_file(
+        "manifest.json"
+    )
+
+    response.headers[
+        "Content-Type"
+    ] = "application/manifest+json"
+
+    return response
+
+
+@app.route("/service-worker.js")
+def service_worker():
+
+    response = app.send_static_file(
+        "service-worker.js"
+    )
+
+    response.headers[
+        "Content-Type"
+    ] = "application/javascript"
+
+    response.headers[
+        "Service-Worker-Allowed"
+    ] = "/"
+
+    return response
 
 
 # =========================================================
@@ -96,7 +114,7 @@ print("=" * 55)
 
 
 # =========================================================
-# LOAD MACHINE LEARNING MODEL
+# LOAD URL MACHINE LEARNING MODEL
 # =========================================================
 
 MODEL_PATH = os.path.join(
@@ -107,29 +125,66 @@ MODEL_PATH = os.path.join(
 
 try:
 
-    ml_model = joblib.load(
+    loaded_model = joblib.load(
         MODEL_PATH
     )
+
+    if isinstance(
+        loaded_model,
+        dict
+    ):
+
+        ml_model = loaded_model.get(
+            "model"
+        )
+
+        URL_FEATURE_NAMES = (
+            loaded_model.get(
+                "feature_names",
+                []
+            )
+        )
+
+    else:
+
+        ml_model = loaded_model
+
+        URL_FEATURE_NAMES = []
+
+
+    if ml_model is None:
+
+        raise ValueError(
+            "URL ML model object not found."
+        )
+
 
     ML_MODEL_AVAILABLE = True
 
     print("=" * 55)
-    print("MACHINE LEARNING MODEL")
+    print("URL MACHINE LEARNING MODEL")
     print("MODEL LOADED: True")
     print(
         "MODEL PATH:",
         MODEL_PATH
     )
+    print(
+        "FEATURE COUNT:",
+        len(URL_FEATURE_NAMES)
+    )
     print("=" * 55)
+
 
 except Exception as e:
 
     ml_model = None
 
+    URL_FEATURE_NAMES = []
+
     ML_MODEL_AVAILABLE = False
 
     print("=" * 55)
-    print("MACHINE LEARNING MODEL")
+    print("URL MACHINE LEARNING MODEL")
     print("MODEL LOADED: False")
     print(
         "MODEL ERROR:",
@@ -176,20 +231,27 @@ def normalize_url(url):
 
         return None
 
-    url = str(url).strip()
+    url = str(
+        url
+    ).strip()
+
 
     # Remove spaces
+
     url = re.sub(
         r"\s+",
         "",
         url
     )
 
+
     if not url:
 
         return None
 
+
     # Add HTTPS if protocol is missing
+
     if not re.match(
         r"^https?://",
         url,
@@ -197,6 +259,7 @@ def normalize_url(url):
     ):
 
         url = "https://" + url
+
 
     try:
 
@@ -211,11 +274,14 @@ def normalize_url(url):
 
             return None
 
+
         if not parsed.netloc:
 
             return None
 
+
         return url
+
 
     except Exception:
 
@@ -223,7 +289,7 @@ def normalize_url(url):
 
 
 # =========================================================
-# ML FEATURE EXTRACTION
+# URL ML FEATURE EXTRACTION
 # MUST MATCH train_model.py
 # =========================================================
 
@@ -233,71 +299,134 @@ def extract_ml_features(url):
         url
     ).lower().strip()
 
+
     features = [
 
-        # URL structure
+        # 1
         len(url),
 
+        # 2
         url.count("."),
 
+        # 3
         url.count("/"),
 
+        # 4
         url.count("-"),
 
+        # 5
         url.count("@"),
 
+        # 6
         url.count("?"),
 
+        # 7
         url.count("="),
 
+        # 8
         url.count("&"),
 
+        # 9
         url.count("%"),
 
-        # Protocol
-        1 if url.startswith(
-            "https://"
-        ) else 0,
 
-        1 if url.startswith(
-            "http://"
-        ) else 0,
+        # 10
+        int(
+            url.startswith(
+                "https://"
+            )
+        ),
 
-        # Suspicious keywords
-        1 if "login" in url else 0,
+        # 11
+        int(
+            url.startswith(
+                "http://"
+            )
+        ),
 
-        1 if "verify" in url else 0,
 
-        1 if "account" in url else 0,
+        # 12
+        int(
+            "login" in url
+        ),
 
-        1 if "bank" in url else 0,
+        # 13
+        int(
+            "verify" in url
+        ),
 
-        1 if "secure" in url else 0,
+        # 14
+        int(
+            "account" in url
+        ),
 
-        1 if "free" in url else 0,
+        # 15
+        int(
+            "bank" in url
+        ),
 
-        1 if "winner" in url else 0,
+        # 16
+        int(
+            "secure" in url
+        ),
 
-        1 if "claim" in url else 0,
+        # 17
+        int(
+            "free" in url
+        ),
 
-        1 if "password" in url else 0,
+        # 18
+        int(
+            "winner" in url
+        ),
 
-        1 if "urgent" in url else 0,
+        # 19
+        int(
+            "claim" in url
+        ),
 
-        1 if "reward" in url else 0,
+        # 20
+        int(
+            "password" in url
+        ),
 
-        1 if "gift" in url else 0,
+        # 21
+        int(
+            "urgent" in url
+        ),
 
-        1 if "prize" in url else 0,
+        # 22
+        int(
+            "reward" in url
+        ),
 
-        # URL shorteners
-        1 if "bit.ly" in url else 0,
+        # 23
+        int(
+            "gift" in url
+        ),
 
-        1 if "tinyurl" in url else 0,
+        # 24
+        int(
+            "prize" in url
+        ),
 
-        1 if "goo.gl" in url else 0
 
+        # 25
+        int(
+            "bit.ly" in url
+        ),
+
+        # 26
+        int(
+            "tinyurl" in url
+        ),
+
+        # 27
+        int(
+            "goo.gl" in url
+        )
     ]
+
 
     return np.array([
         features
@@ -305,7 +434,7 @@ def extract_ml_features(url):
 
 
 # =========================================================
-# MACHINE LEARNING PREDICTION
+# URL MACHINE LEARNING PREDICTION
 # =========================================================
 
 def predict_url_with_ml(url):
@@ -314,16 +443,19 @@ def predict_url_with_ml(url):
 
         return {
 
-            "status": "UNKNOWN",
+            "status":
+                "UNKNOWN",
 
             "message":
                 "Machine Learning model is not available.",
 
-            "prediction": None,
+            "prediction":
+                None,
 
-            "scam_probability": 0
-
+            "scam_probability":
+                0
         }
+
 
     try:
 
@@ -331,19 +463,39 @@ def predict_url_with_ml(url):
             url
         )
 
-        # Prediction
-        prediction = ml_model.predict(
-            features
-        )[0]
 
-        # Probability
-        probability = ml_model.predict_proba(
-            features
-        )[0]
+        # Check feature count
+
+        if (
+            len(features[0])
+            != 27
+        ):
+
+            raise ValueError(
+                "URL feature count mismatch."
+            )
+
+
+        # ML prediction
+
+        prediction = (
+            ml_model
+            .predict(features)[0]
+        )
+
+
+        # ML probability
+
+        probability = (
+            ml_model
+            .predict_proba(features)[0]
+        )
+
 
         scam_probability = (
             probability[1] * 100
         )
+
 
         if int(prediction) == 1:
 
@@ -364,23 +516,25 @@ def predict_url_with_ml(url):
                 "classified this URL as potentially safe."
             )
 
+
         return {
 
-            "status": status,
+            "status":
+                status,
 
-            "message": message,
+            "message":
+                message,
 
-            "prediction": int(
-                prediction
-            ),
+            "prediction":
+                int(prediction),
 
             "scam_probability":
                 round(
                     scam_probability,
                     2
                 )
-
         }
+
 
     except Exception as e:
 
@@ -389,17 +543,20 @@ def predict_url_with_ml(url):
             e
         )
 
+
         return {
 
-            "status": "UNKNOWN",
+            "status":
+                "UNKNOWN",
 
             "message":
                 "Machine Learning prediction failed.",
 
-            "prediction": None,
+            "prediction":
+                None,
 
-            "scam_probability": 0
-
+            "scam_probability":
+                0
         }
 
 
@@ -409,9 +566,11 @@ def predict_url_with_ml(url):
 
 def get_vt_url_id(url):
 
-    encoded = base64.urlsafe_b64encode(
-        url.encode()
-    ).decode()
+    encoded = (
+        base64.urlsafe_b64encode(
+            url.encode()
+        ).decode()
+    )
 
     return encoded.rstrip("=")
 
@@ -444,7 +603,6 @@ def make_result(
             int(
                 suspicious or 0
             )
-
     }
 
 
@@ -456,19 +614,21 @@ def local_url_check(url):
 
     reasons = []
 
+
     try:
 
         parsed = urlparse(
             url
         )
 
-        host = parsed.netloc.lower()
+        host = (
+            parsed.netloc.lower()
+        )
 
-        path = parsed.path.lower()
+        full_url = (
+            url.lower()
+        )
 
-        query = parsed.query.lower()
-
-        full_url = url.lower()
 
         suspicious_words = [
 
@@ -488,8 +648,8 @@ def local_url_check(url):
             "claim",
             "reward",
             "otp"
-
         ]
+
 
         for word in suspicious_words:
 
@@ -500,14 +660,20 @@ def local_url_check(url):
                     + word
                 )
 
+
         # IP address
+
         ip_pattern = (
             r"^(?:\d{1,3}\.){3}\d{1,3}"
         )
 
+
+        hostname = host.split(":")[0]
+
+
         if re.match(
             ip_pattern,
-            host.split(":")[0]
+            hostname
         ):
 
             reasons.append(
@@ -515,8 +681,8 @@ def local_url_check(url):
                 "instead of a domain name."
             )
 
+
         # Too many subdomains
-        hostname = host.split(":")[0]
 
         if hostname.count(".") >= 4:
 
@@ -525,7 +691,9 @@ def local_url_check(url):
                 "subdomains detected."
             )
 
+
         # @ symbol
+
         if "@" in url:
 
             reasons.append(
@@ -533,14 +701,18 @@ def local_url_check(url):
                 "which can hide the real destination."
             )
 
+
         # Long URL
+
         if len(url) > 180:
 
             reasons.append(
                 "URL is unusually long."
             )
 
+
         return reasons
+
 
     except Exception:
 
@@ -560,12 +732,14 @@ def result_from_stats(stats):
         ) or 0
     )
 
+
     suspicious = int(
         stats.get(
             "suspicious",
             0
         ) or 0
     )
+
 
     if malicious > 0:
 
@@ -582,8 +756,8 @@ def result_from_stats(stats):
             malicious,
 
             suspicious
-
         )
+
 
     if suspicious > 0:
 
@@ -600,8 +774,8 @@ def result_from_stats(stats):
             malicious,
 
             suspicious
-
         )
+
 
     return make_result(
 
@@ -615,7 +789,6 @@ def result_from_stats(stats):
         malicious,
 
         suspicious
-
     )
 
 
@@ -634,6 +807,7 @@ def scan_url_with_virustotal(url):
     )
     print("=" * 55)
 
+
     if not VT_API_KEY:
 
         return make_result(
@@ -641,8 +815,8 @@ def scan_url_with_virustotal(url):
             "UNKNOWN",
 
             "VirusTotal API key is missing."
-
         )
+
 
     headers = {
 
@@ -651,8 +825,8 @@ def scan_url_with_virustotal(url):
 
         "accept":
             "application/json"
-
     }
+
 
     try:
 
@@ -664,10 +838,12 @@ def scan_url_with_virustotal(url):
             url
         )
 
+
         lookup_url = (
             "https://www.virustotal.com/api/v3/urls/"
             + url_id
         )
+
 
         lookup_response = requests.get(
 
@@ -676,13 +852,14 @@ def scan_url_with_virustotal(url):
             headers=headers,
 
             timeout=20
-
         )
+
 
         print(
             "URL LOOKUP STATUS:",
             lookup_response.status_code
         )
+
 
         if lookup_response.status_code == 200:
 
@@ -690,15 +867,18 @@ def scan_url_with_virustotal(url):
                 lookup_response.json()
             )
 
+
             attributes = (
                 lookup_json
                 .get("data", {})
                 .get("attributes", {})
             )
 
+
             stats = attributes.get(
                 "last_analysis_stats"
             )
+
 
             if stats:
 
@@ -711,24 +891,26 @@ def scan_url_with_virustotal(url):
                     stats
                 )
 
-                result = result_from_stats(
-                    stats
+
+                result = (
+                    result_from_stats(
+                        stats
+                    )
                 )
 
-                # Local heuristic
+
                 if (
-
                     result["malicious"] == 0
-
                     and
-
                     result["suspicious"] == 0
-
                 ):
 
-                    reasons = local_url_check(
-                        url
+                    reasons = (
+                        local_url_check(
+                            url
+                        )
                     )
+
 
                     if reasons:
 
@@ -742,9 +924,13 @@ def scan_url_with_virustotal(url):
                             "URL patterns were detected."
                         )
 
-                        result["reasons"] = reasons
+                        result["reasons"] = (
+                            reasons
+                        )
+
 
                 return result
+
 
         elif lookup_response.status_code == 401:
 
@@ -756,8 +942,8 @@ def scan_url_with_virustotal(url):
                     "VirusTotal API key is "
                     "invalid or unauthorized."
                 )
-
             )
+
 
         # =================================================
         # STEP 2 - SUBMIT NEW URL
@@ -766,6 +952,7 @@ def scan_url_with_virustotal(url):
         print(
             "Submitting URL to VirusTotal..."
         )
+
 
         submit_response = requests.post(
 
@@ -778,13 +965,14 @@ def scan_url_with_virustotal(url):
             },
 
             timeout=30
-
         )
+
 
         print(
             "SUBMIT STATUS:",
             submit_response.status_code
         )
+
 
         if submit_response.status_code not in [
             200,
@@ -796,19 +984,28 @@ def scan_url_with_virustotal(url):
                 submit_response.text
             )
 
-            if submit_response.status_code == 401:
+
+            if (
+                submit_response.status_code
+                == 401
+            ):
 
                 message = (
                     "VirusTotal API key is "
                     "invalid or unauthorized."
                 )
 
-            elif submit_response.status_code == 429:
+
+            elif (
+                submit_response.status_code
+                == 429
+            ):
 
                 message = (
                     "VirusTotal API request "
                     "limit reached."
                 )
+
 
             else:
 
@@ -819,20 +1016,26 @@ def scan_url_with_virustotal(url):
                     )
                 )
 
+
             return make_result(
+
                 "UNKNOWN",
+
                 message
             )
+
 
         submit_json = (
             submit_response.json()
         )
+
 
         analysis_id = (
             submit_json
             .get("data", {})
             .get("id")
         )
+
 
         if not analysis_id:
 
@@ -844,34 +1047,36 @@ def scan_url_with_virustotal(url):
                     "VirusTotal did not "
                     "return an analysis ID."
                 )
-
             )
+
 
         print(
             "ANALYSIS ID:",
             analysis_id
         )
 
+
         # =================================================
         # STEP 3 - WAIT FOR ANALYSIS
         # =================================================
 
         analysis_url = (
-
             "https://www.virustotal.com/api/v3/"
             "analyses/"
             + analysis_id
-
         )
+
 
         for attempt in range(20):
 
             time.sleep(2)
 
+
             print(
                 "Checking analysis:",
                 attempt + 1
             )
+
 
             analysis_response = requests.get(
 
@@ -880,27 +1085,34 @@ def scan_url_with_virustotal(url):
                 headers=headers,
 
                 timeout=20
-
             )
+
 
             print(
                 "ANALYSIS RESPONSE:",
                 analysis_response.status_code
             )
 
-            if analysis_response.status_code != 200:
+
+            if (
+                analysis_response.status_code
+                != 200
+            ):
 
                 continue
+
 
             analysis_json = (
                 analysis_response.json()
             )
+
 
             attributes = (
                 analysis_json
                 .get("data", {})
                 .get("attributes", {})
             )
+
 
             analysis_status = (
                 attributes.get(
@@ -909,43 +1121,52 @@ def scan_url_with_virustotal(url):
                 )
             )
 
+
             print(
                 "ANALYSIS STATUS:",
                 analysis_status
             )
 
-            if analysis_status != "completed":
+
+            if (
+                analysis_status
+                != "completed"
+            ):
 
                 continue
+
 
             stats = attributes.get(
                 "stats",
                 {}
             )
 
+
             print(
                 "FINAL STATS:",
                 stats
             )
 
-            result = result_from_stats(
-                stats
+
+            result = (
+                result_from_stats(
+                    stats
+                )
             )
 
-            # Local heuristic
+
             if (
-
                 result["malicious"] == 0
-
                 and
-
                 result["suspicious"] == 0
-
             ):
 
-                reasons = local_url_check(
-                    url
+                reasons = (
+                    local_url_check(
+                        url
+                    )
                 )
+
 
                 if reasons:
 
@@ -959,9 +1180,13 @@ def scan_url_with_virustotal(url):
                         "URL patterns were detected."
                     )
 
-                    result["reasons"] = reasons
+                    result["reasons"] = (
+                        reasons
+                    )
+
 
             return result
+
 
         # =================================================
         # ANALYSIS STILL PROCESSING
@@ -972,6 +1197,7 @@ def scan_url_with_virustotal(url):
             "still processing."
         )
 
+
         return make_result(
 
             "UNKNOWN",
@@ -981,8 +1207,8 @@ def scan_url_with_virustotal(url):
                 "processing. Please try again "
                 "after a few seconds."
             )
-
         )
+
 
     # =====================================================
     # EXCEPTIONS
@@ -995,8 +1221,8 @@ def scan_url_with_virustotal(url):
             "UNKNOWN",
 
             "VirusTotal request timed out."
-
         )
+
 
     except requests.exceptions.ConnectionError:
 
@@ -1005,8 +1231,8 @@ def scan_url_with_virustotal(url):
             "UNKNOWN",
 
             "Unable to connect to VirusTotal."
-
         )
+
 
     except requests.exceptions.RequestException as e:
 
@@ -1015,13 +1241,14 @@ def scan_url_with_virustotal(url):
             e
         )
 
+
         return make_result(
 
             "UNKNOWN",
 
             "VirusTotal request failed."
-
         )
+
 
     except Exception as e:
 
@@ -1030,12 +1257,12 @@ def scan_url_with_virustotal(url):
             e
         )
 
+
         return make_result(
 
             "UNKNOWN",
 
             "VirusTotal connection failed."
-
         )
 
 
@@ -1054,16 +1281,19 @@ def analyze_url():
     print("URL ANALYZER")
     print("=" * 55)
 
+
     try:
 
         data = request.get_json(
             silent=True
         ) or {}
 
+
         url = data.get(
             "url",
             ""
         )
+
 
         if not isinstance(
             url,
@@ -1072,12 +1302,15 @@ def analyze_url():
 
             url = str(url)
 
+
         url = url.strip()
+
 
         print(
             "URL RECEIVED:",
             url
         )
+
 
         # =================================================
         # VALIDATE URL
@@ -1087,16 +1320,19 @@ def analyze_url():
             url
         )
 
+
         if not normalized_url:
 
             return jsonify({
 
-                "success": False,
+                "success":
+                    False,
 
                 "error":
                     "Please enter a valid website URL."
 
             }), 400
+
 
         # =================================================
         # MACHINE LEARNING
@@ -1106,20 +1342,24 @@ def analyze_url():
         print("MACHINE LEARNING ANALYSIS")
         print("=" * 55)
 
+
         ml_result = predict_url_with_ml(
             normalized_url
         )
+
 
         print(
             "ML STATUS:",
             ml_result["status"]
         )
 
+
         print(
             "ML SCAM PROBABILITY:",
             ml_result["scam_probability"],
             "%"
         )
+
 
         # =================================================
         # VIRUSTOTAL
@@ -1129,9 +1369,13 @@ def analyze_url():
         print("VIRUSTOTAL ANALYSIS")
         print("=" * 55)
 
-        vt_result = scan_url_with_virustotal(
-            normalized_url
+
+        vt_result = (
+            scan_url_with_virustotal(
+                normalized_url
+            )
         )
+
 
         print(
             "VT STATUS:",
@@ -1140,42 +1384,55 @@ def analyze_url():
             )
         )
 
+
         # =================================================
         # LOCAL HEURISTIC
         # =================================================
 
-        local_reasons = local_url_check(
-            normalized_url
+        local_reasons = (
+            local_url_check(
+                normalized_url
+            )
         )
+
 
         print(
             "LOCAL REASONS:",
             local_reasons
         )
 
+
         # =================================================
         # FINAL STATUS
         # =================================================
 
-        vt_status = vt_result.get(
-            "status",
-            "UNKNOWN"
+        vt_status = (
+            vt_result.get(
+                "status",
+                "UNKNOWN"
+            )
         )
 
-        ml_status = ml_result.get(
-            "status",
-            "UNKNOWN"
+
+        ml_status = (
+            ml_result.get(
+                "status",
+                "UNKNOWN"
+            )
         )
+
 
         final_status = "SAFE"
+
 
         final_message = (
             "No obvious security threat "
             "was detected."
         )
 
-        # Highest priority:
+
         # VirusTotal malicious
+
         if vt_status == "RISK":
 
             final_status = "RISK"
@@ -1185,7 +1442,9 @@ def analyze_url():
                 "activity. Avoid opening this URL."
             )
 
-        # ML detects phishing
+
+        # ML detects risk
+
         elif ml_status == "RISK":
 
             final_status = "RISK"
@@ -1196,7 +1455,9 @@ def analyze_url():
                 "or malicious."
             )
 
+
         # VirusTotal suspicious
+
         elif vt_status == "SUSPICIOUS":
 
             final_status = "SUSPICIOUS"
@@ -1207,7 +1468,9 @@ def analyze_url():
                 "before continuing."
             )
 
+
         # Local heuristic
+
         elif local_reasons:
 
             final_status = "SUSPICIOUS"
@@ -1218,7 +1481,9 @@ def analyze_url():
                 "before continuing."
             )
 
-        # VT unavailable but ML safe
+
+        # VT unavailable
+
         elif vt_status == "UNKNOWN":
 
             if ml_status == "SAFE":
@@ -1240,25 +1505,33 @@ def analyze_url():
                     "status completely."
                 )
 
+
         # =================================================
         # FINAL RESPONSE
         # =================================================
 
         response_data = {
 
-            "success": True,
+            "success":
+                True,
+
 
             "url":
                 normalized_url,
 
+
             # Final combined status
+
             "status":
                 final_status,
+
 
             "message":
                 final_message,
 
+
             # VirusTotal
+
             "malicious":
                 int(
                     vt_result.get(
@@ -1267,6 +1540,7 @@ def analyze_url():
                     )
                     or 0
                 ),
+
 
             "suspicious":
                 int(
@@ -1277,17 +1551,21 @@ def analyze_url():
                     or 0
                 ),
 
+
             # Machine Learning
+
             "ml_status":
                 ml_result.get(
                     "status",
                     "UNKNOWN"
                 ),
 
+
             "ml_prediction":
                 ml_result.get(
                     "prediction"
                 ),
+
 
             "scam_probability":
                 ml_result.get(
@@ -1295,11 +1573,15 @@ def analyze_url():
                     0
                 ),
 
+
             # Local analysis
+
             "local_reasons":
                 local_reasons,
 
+
             # Detailed result
+
             "result": {
 
                 "url":
@@ -1348,43 +1630,55 @@ def analyze_url():
 
                 "local_reasons":
                     local_reasons
-
             }
-
         }
 
+
         # Add reasons
+
         if local_reasons:
 
-            response_data["reasons"] = (
-                local_reasons
-            )
+            response_data[
+                "reasons"
+            ] = local_reasons
+
 
             response_data[
                 "result"
-            ]["reasons"] = (
-                local_reasons
-            )
+            ][
+                "reasons"
+            ] = local_reasons
+
 
         print("=" * 55)
         print("FINAL URL RESULT")
+
+
         print(
             "STATUS:",
             final_status
         )
+
+
         print(
             "ML:",
             ml_result
         )
+
+
         print(
             "VT:",
             vt_result
         )
+
+
         print("=" * 55)
+
 
         return jsonify(
             response_data
         )
+
 
     except Exception as e:
 
@@ -1393,9 +1687,11 @@ def analyze_url():
             e
         )
 
+
         return jsonify({
 
-            "success": False,
+            "success":
+                False,
 
             "error":
                 "URL analysis failed: "
@@ -1419,9 +1715,11 @@ def analyze_url_form():
         ""
     )
 
+
     normalized_url = normalize_url(
         url
     )
+
 
     if not normalized_url:
 
@@ -1431,43 +1729,62 @@ def analyze_url_form():
 
             error=
                 "Please enter a valid website URL."
-
         )
 
+
     # ML
+
     ml_result = predict_url_with_ml(
         normalized_url
     )
 
+
     # VirusTotal
+
     vt_result = scan_url_with_virustotal(
         normalized_url
     )
+
+
+    # Local heuristic
 
     reasons = local_url_check(
         normalized_url
     )
 
+
     # Final status
-    if vt_result.get("status") == "RISK":
+
+    if vt_result.get(
+        "status"
+    ) == "RISK":
 
         final_status = "RISK"
 
-    elif ml_result.get("status") == "RISK":
+
+    elif ml_result.get(
+        "status"
+    ) == "RISK":
 
         final_status = "RISK"
 
-    elif vt_result.get("status") == "SUSPICIOUS":
+
+    elif vt_result.get(
+        "status"
+    ) == "SUSPICIOUS":
 
         final_status = "SUSPICIOUS"
+
 
     elif reasons:
 
         final_status = "SUSPICIOUS"
 
+
     else:
 
         final_status = "SAFE"
+
 
     return render_template(
 
@@ -1477,11 +1794,9 @@ def analyze_url_form():
 
         status=final_status,
 
-        message=(
-            vt_result.get(
-                "message",
-                ""
-            )
+        message=vt_result.get(
+            "message",
+            ""
         ),
 
         malicious=vt_result.get(
@@ -1505,7 +1820,6 @@ def analyze_url_form():
             "scam_probability",
             0
         )
-
     )
 
 
@@ -1519,13 +1833,16 @@ def analyze_upi(data):
 
     score = 0
 
+
     parsed = urlparse(
         data
     )
 
+
     params = parse_qs(
         parsed.query
     )
+
 
     # =====================================================
     # UPI ID
@@ -1540,6 +1857,7 @@ def analyze_upi(data):
 
     ).strip()
 
+
     # =====================================================
     # MERCHANT
     # =====================================================
@@ -1553,47 +1871,63 @@ def analyze_upi(data):
 
     ).strip()
 
+
     # =====================================================
     # AMOUNT
     # =====================================================
 
     amount = params.get(
+
         "am",
         ["Not Specified"]
     )[0]
 
-    if not amount or amount == "undefined":
+
+    if (
+        not amount
+        or
+        amount == "undefined"
+    ):
 
         amount = "Not Specified"
+
 
     # =====================================================
     # CURRENCY
     # =====================================================
 
     currency = params.get(
+
         "cu",
         ["INR"]
     )[0]
+
 
     # =====================================================
     # UPI ID VALIDATION
     # =====================================================
 
     upi_pattern = (
+
         r"^[A-Za-z0-9._-]+"
         r"@[A-Za-z0-9._-]+$"
     )
 
+
     if not re.match(
+
         upi_pattern,
+
         upi_id
     ):
 
         score += 3
 
         reasons.append(
+
             "UPI ID format is unusual."
         )
+
 
     # =====================================================
     # AMOUNT VALIDATION
@@ -1607,21 +1941,26 @@ def analyze_upi(data):
                 amount
             )
 
+
             if amount_value <= 0:
 
                 score += 2
 
                 reasons.append(
+
                     "Payment amount is invalid."
                 )
+
 
         except ValueError:
 
             score += 2
 
             reasons.append(
+
                 "Payment amount format is invalid."
             )
+
 
     # =====================================================
     # SUSPICIOUS KEYWORDS
@@ -1648,8 +1987,8 @@ def analyze_upi(data):
         "password",
         "otp",
         "login"
-
     ]
+
 
     combined_text = (
 
@@ -1658,6 +1997,7 @@ def analyze_upi(data):
         + upi_id
 
     ).lower()
+
 
     for word in suspicious_words:
 
@@ -1669,8 +2009,8 @@ def analyze_upi(data):
 
                 "Suspicious keyword detected: "
                 + word
-
             )
+
 
     # =====================================================
     # SUSPICIOUS MERCHANT
@@ -1688,12 +2028,13 @@ def analyze_upi(data):
         "cashback",
         "claim",
         "urgent"
-
     ]
+
 
     merchant_lower = (
         merchant.lower()
     )
+
 
     for word in suspicious_merchant_words:
 
@@ -1702,10 +2043,12 @@ def analyze_upi(data):
             score += 3
 
             reasons.append(
+
                 "Suspicious merchant name detected."
             )
 
             break
+
 
     # =====================================================
     # SUSPICIOUS PROVIDER
@@ -1717,10 +2060,11 @@ def analyze_upi(data):
         "unknownbank",
         "testbank",
         "fakeupi"
-
     ]
 
+
     provider = ""
+
 
     if "@" in upi_id:
 
@@ -1729,17 +2073,19 @@ def analyze_upi(data):
             upi_id
             .split("@")[-1]
             .lower()
-
         )
+
 
     if provider in suspicious_providers:
 
         score += 4
 
         reasons.append(
+
             "Unknown or suspicious "
             "UPI provider detected."
         )
+
 
     # =====================================================
     # FINAL STATUS
@@ -1755,8 +2101,8 @@ def analyze_upi(data):
             "were detected. Do not make the "
             "payment until the recipient is "
             "independently verified."
-
         )
+
 
     elif score >= 4:
 
@@ -1767,8 +2113,8 @@ def analyze_upi(data):
             "Some suspicious indicators "
             "were detected. Verify the "
             "recipient before making the payment."
-
         )
+
 
     else:
 
@@ -1779,8 +2125,8 @@ def analyze_upi(data):
             "No obvious suspicious pattern "
             "was detected. Still verify the "
             "recipient before payment."
-
         )
+
 
     return {
 
@@ -1810,7 +2156,6 @@ def analyze_upi(data):
 
         "payment_url":
             data
-
     }
 
 
@@ -1823,61 +2168,73 @@ def decode_qr_image(file):
 
     image_bytes = file.read()
 
+
     if not image_bytes:
 
         return None
+
 
     image_array = np.frombuffer(
 
         image_bytes,
 
         np.uint8
-
     )
+
 
     image = cv2.imdecode(
 
         image_array,
 
         cv2.IMREAD_COLOR
-
     )
+
 
     if image is None:
 
         return None
 
+
     detector = cv2.QRCodeDetector()
 
+
     # First attempt
+
     data, points, _ = (
+
         detector.detectAndDecode(
             image
         )
     )
 
+
     if data:
 
         return data.strip()
 
+
     # Grayscale
+
     gray = cv2.cvtColor(
 
         image,
 
         cv2.COLOR_BGR2GRAY
-
     )
 
+
     data, points, _ = (
+
         detector.detectAndDecode(
             gray
         )
     )
 
+
     if data:
 
         return data.strip()
+
 
     return None
 
@@ -1896,6 +2253,7 @@ def upi_scan():
     print("UPI QR IMAGE SCAN")
     print("=" * 45)
 
+
     if "upi_image" not in request.files:
 
         return render_template(
@@ -1904,12 +2262,13 @@ def upi_scan():
 
             error=
                 "UPI QR image was not uploaded."
-
         )
+
 
     file = request.files[
         "upi_image"
     ]
+
 
     if file.filename == "":
 
@@ -1919,14 +2278,15 @@ def upi_scan():
 
             error=
                 "Please select a UPI QR image."
-
         )
+
 
     try:
 
         data = decode_qr_image(
             file
         )
+
 
         if not data:
 
@@ -1938,15 +2298,15 @@ def upi_scan():
 
                     "UPI QR code was not detected. "
                     "Please upload a clear QR image."
-
                 )
-
             )
+
 
         print(
             "UPI QR DATA:",
             data
         )
+
 
         if not data.lower().startswith(
             "upi://pay"
@@ -1960,27 +2320,28 @@ def upi_scan():
 
                     "This is not a valid "
                     "UPI payment QR."
-
                 )
-
             )
+
 
         result = analyze_upi(
             data
         )
+
 
         print(
             "UPI RESULT:",
             result
         )
 
+
         return render_template(
 
             "upi_payment.html",
 
             upi=result
-
         )
+
 
     except Exception as e:
 
@@ -1989,12 +2350,12 @@ def upi_scan():
             e
         )
 
+
         return render_template(
 
             "upi_payment.html",
 
             error=str(e)
-
         )
 
 
@@ -2012,16 +2373,19 @@ def upi_camera_scan():
     print("UPI CAMERA SCAN")
     print("=" * 45)
 
+
     try:
 
         body = request.get_json(
             silent=True
         ) or {}
 
+
         data = body.get(
             "data",
             ""
         )
+
 
         if not isinstance(
             data,
@@ -2030,23 +2394,28 @@ def upi_camera_scan():
 
             data = str(data)
 
+
         data = data.strip()
+
 
         print(
             "CAMERA UPI DATA:",
             data
         )
 
+
         if not data:
 
             return jsonify({
 
-                "success": False,
+                "success":
+                    False,
 
                 "error":
                     "UPI QR data was not detected."
 
             }), 400
+
 
         if not data.lower().startswith(
             "upi://pay"
@@ -2054,49 +2423,56 @@ def upi_camera_scan():
 
             return jsonify({
 
-                "success": False,
+                "success":
+                    False,
 
                 "error": (
-
                     "This is not a valid "
                     "UPI payment QR."
-
                 )
 
             }), 400
 
+
         result = analyze_upi(
             data
         )
+
 
         print(
             "UPI ID:",
             result["upi_id"]
         )
 
+
         print(
             "MERCHANT:",
             result["merchant"]
         )
+
 
         print(
             "AMOUNT:",
             result["amount"]
         )
 
+
         print(
             "SCORE:",
             result["score"]
         )
+
 
         print(
             "STATUS:",
             result["status"]
         )
 
+
         return jsonify({
 
-            "success": True,
+            "success":
+                True,
 
             "result": {
 
@@ -2126,10 +2502,10 @@ def upi_camera_scan():
 
                 "payment_url":
                     result["payment_url"]
-
             }
 
         })
+
 
     except Exception as e:
 
@@ -2138,9 +2514,11 @@ def upi_camera_scan():
             e
         )
 
+
         return jsonify({
 
-            "success": False,
+            "success":
+                False,
 
             "error":
                 "Camera scan failed: "
@@ -2162,5 +2540,4 @@ if __name__ == "__main__":
         port=5000,
 
         debug=True
-
     )
